@@ -11,6 +11,10 @@
     Bronze: <input id="bronze" type="text" length="5" /> <br/>
     <input type="button" value="Send" onclick="fillName()" />
     <input type="reset" value="Clear" />
+
+    <h2>Hello endpoint result</h2>
+    <div id="helloMessage"></div>
+
     </form>
   </body>
   <script>
@@ -22,6 +26,15 @@
         document.getElementById('name').value = data;
      })
      .catch(error => console.error('Error:', error));
+
+    fetch('http://localhost:8000/hello')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('helloMessage').innerText = data.message;
+    })
+    .catch(error => console.error('Error:', error));
+    
   }
+
   </script>
 </html>
