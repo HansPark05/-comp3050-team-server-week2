@@ -47,5 +47,5 @@ Team Members and Roles
 Arindam Biswas |	                	   |   
 Team Member 2  |                       |  
 Team Member 3	 |                       |  
-Team member 4  |                       |
+Hanseong Park  |    Team Manager                   | Make a repo , Create CI/CD Pipeline
 team member 5  |                       |
