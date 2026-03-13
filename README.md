@@ -44,6 +44,11 @@ This endpoint returns a JSON object containing Olympic medal statistics for a co
 
 Team Members and Roles
    Name	              Role	                     Responsibilities
+Arindam Biswas |	                	   |   
+Team Member 2  |                       |  
+Jaehyeok Park	 |Update the HTML client |  Manage and check error in HTML client
+Team member 4  |                       |
+team member 5  |                       |
 Arindam Biswas |	  GITHUB DOCUMENTATION |   ADD UPDATE README FILE ACCORDING TO THE PROGRESS AND CURRENT STATE OF PROJECT
 Team Member 2  |                         |  
 Team Member 3	 |                         |  
