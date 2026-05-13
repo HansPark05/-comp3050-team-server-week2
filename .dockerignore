@@ -1,6 +1,0 @@
-*.class
-.git
-.github
-*.pem
-.env
-target/
