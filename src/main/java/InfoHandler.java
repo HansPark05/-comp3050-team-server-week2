@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import comp3050.server.SessionManager;
 
 public class InfoHandler implements HttpHandler {
 
@@ -18,6 +19,7 @@ public class InfoHandler implements HttpHandler {
         String query = he.getRequestURI().getQuery();
         int y = -1;
         int x = -1;
+        String session = null;
 
         if (query != null) {
             for (String param : query.split("&")) {
@@ -26,12 +28,18 @@ public class InfoHandler implements HttpHandler {
                     try {
                         if (pair[0].equals("y")) y = Integer.parseInt(pair[1]);
                         else if (pair[0].equals("x")) x = Integer.parseInt(pair[1]);
+                        else if (pair[0].equals("session")) session = pair[1];
                     } catch (NumberFormatException ignored) {}
                 }
             }
         }
 
-        // Return 204 if requested location doesn't match current player position
+        if (session == null || SessionManager.getInstance().getUser(session) == null) {
+            he.sendResponseHeaders(401, -1);
+            he.close();
+            return;
+        }
+
         if (y != Test.playerY || x != Test.playerX) {
             he.sendResponseHeaders(204, -1);
             he.close();
@@ -43,7 +51,6 @@ public class InfoHandler implements HttpHandler {
         int bottom = Test.playerY + 5;
         int right  = Test.playerX + 5;
 
-        // Build 11x11 info array centred on player
         StringBuilder info = new StringBuilder("[");
         for (int row = top; row <= bottom; row++) {
             if (row > top) info.append(",");
