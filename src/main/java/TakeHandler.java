@@ -1,3 +1,4 @@
+
 import java.io.IOException;
 import java.io.OutputStream;
 import com.sun.net.httpserver.HttpExchange;
@@ -34,6 +35,8 @@ public class TakeHandler implements HttpHandler {
         if (tile == '.' || tile == ',') {
             // Remove item from map and replace with grass
             GameMap.setTile(y, x, 'g');
+            // Add item to player inventory
+            Test.inventory.add(tile);
             String response = "{\"item\":\"" + tile + "\",\"y\":" + y + ",\"x\":" + x + "}";
             he.getResponseHeaders().set("Content-Type", "application/json");
             he.sendResponseHeaders(200, response.getBytes().length);
