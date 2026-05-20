@@ -34,7 +34,7 @@ public class UseHandler implements HttpHandler {
         if (dxStr != null) dx = Integer.parseInt(dxStr);
 
         // Must be exactly one step in one direction (no diagonal)
-        if (Math.abs(dy) + Math.abs(dx) != 1) {
+        if (Math.abs(dy) + Math.abs(dx) > 1) {
             he.sendResponseHeaders(204, -1);
             he.close();
             return;
@@ -53,15 +53,16 @@ public class UseHandler implements HttpHandler {
 
         char tile = GameMap.getTile(targetY, targetX);
 
-        // Only interact with closed doors
-        if (tile != 'D') {
+        // Only interact with doors (open or closed)
+        if (tile != 'D' && tile != 'd') {
             he.sendResponseHeaders(204, -1);
             he.close();
             return;
         }
 
-        // Open the door
-        GameMap.setTile(targetY, targetX, 'd');
+        // Toggle door state: D → d (open), d → D (close)
+        char newTile = (tile == 'D') ? 'd' : 'D';
+        GameMap.setTile(targetY, targetX, newTile);
 
         String response = "{\"y\":" + targetY + ",\"x\":" + targetX + ",\"tile\":\"d\"}";
         he.getResponseHeaders().set("Content-Type", "application/json");
