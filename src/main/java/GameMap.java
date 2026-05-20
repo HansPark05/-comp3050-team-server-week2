@@ -60,4 +60,9 @@ public class GameMap {
     public static int getHeight() {
         return height;
     }
+
+    // Allow modifying a tile (e.g. when player picks up an item)
+    public static void setTile(int y, int x, char tile) {
+        map[y][x] = tile;
+    }
 }
