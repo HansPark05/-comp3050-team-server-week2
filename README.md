@@ -10,15 +10,15 @@ A **Java HTTP game server** for a 2D tile-based virtual world. The server commun
 
 ### API Endpoints
 
-| Endpoint        | Method | Description                                            |
-| --------------- | ------ | ------------------------------------------------------ |
-| `/login`        | POST   | Verify name + encrypted password, return session token |
-| `/logout`       | GET    | Invalidate session token                               |
-| `/move?dy=&dx=` | GET    | Move character N/S/E/W                                 |
-| `/info?y=&x=`   | GET    | Return map tile data around player's location          |
-| `/take`         | GET    | Pick up item at player's location                      |
-| `/place`        | GET    | Drop item from inventory                               |
-| `/use?dy=&dx=`  | GET    | Interact with adjacent map element (e.g. open a door)  |
+| Endpoint        | Method | Description                                            | Status             |
+| --------------- | ------ | ------------------------------------------------------ | ------------------ |
+| `/login`        | POST   | Verify name + encrypted password, return session token | ✅ Working         |
+| `/logout`       | GET    | Invalidate session token                               | ✅ Working         |
+| `/move?dy=&dx=` | GET    | Move character N/S/E/W                                 | ✅ Working         |
+| `/info?y=&x=`   | GET    | Return map tile data around player's location          | ✅ Working         |
+| `/take`         | GET    | Pick up item at player's location                      | ✅ Working         |
+| `/place`        | GET    | Drop item from inventory                               | ✅ Working         |
+| `/use?dy=&dx=`  | GET    | Interact with adjacent map element (e.g. open a door)  | ✅ Working         |
 
 ### Tech Stack
 
@@ -34,17 +34,18 @@ A **Java HTTP game server** for a 2D tile-based virtual world. The server commun
 
 ### Weekly Progress
 
-| Week | Topic             | What We Built                                                  |
-| ---- | ----------------- | -------------------------------------------------------------- |
-| 1    | Java HTTP server  | Basic `/test` and `/hello` endpoints                           |
-| 2    | Git + GitHub + CI | Team workflow, GitHub Actions pipeline                         |
-| 3    | Docker            | Containerised the server                                       |
-| 4    | JUnit testing     | Automated tests with Maven                                     |
-| 5    | Kubernetes        | Container orchestration                                        |
-| 6    | DevSecOps         | Trivy and Semgrep security scanning in CI                      |
-| 7    | AWS EC2           | Cloud deployment to ap-southeast-2 (Sydney)                    |
-| 8    | Terraform         | Infrastructure as Code, automated EC2 deployment               |
-| 9    | CI/CD Pipelines   | Automated build, push, and deploy pipeline with GitHub Actions |
+| Week | Topic             | What We Built                                                                  |
+| ---- | ----------------- | ------------------------------------------------------------------------------ |
+| 1    | Java HTTP server  | Basic `/test` and `/hello` endpoints                                           |
+| 2    | Git + GitHub + CI | Team workflow, GitHub Actions pipeline                                         |
+| 3    | Docker            | Containerised the server                                                       |
+| 4    | JUnit testing     | Automated tests with Maven                                                     |
+| 5    | Kubernetes        | Container orchestration                                                        |
+| 6    | DevSecOps         | Trivy and Semgrep security scanning in CI                                      |
+| 7    | AWS EC2           | Cloud deployment to ap-southeast-2 (Sydney)                                    |
+| 8    | Terraform         | Infrastructure as Code, automated EC2 deployment                               |
+| 9    | CI/CD Pipelines   | Automated build, push, and deploy pipeline with GitHub Actions                 |
+| 10+  | Final API         | `/take`, `/place`, `/use` endpoints; `setTile()` on GameMap; JUnit integration |
 
 ---
 
@@ -246,25 +247,31 @@ Returns an 11x11 grid of tile data centred on the player.
 
 ## Project Task Assignment
 
-| Task                                            | Assigned To | Status  |
-| ----------------------------------------------- | ----------- | ------- |
-| Map file (`map.txt`) + `GameMap.java`           | Arindam     | ✅ Done |
-| Implement `/move` endpoint (`MoveHandler.java`) | Jaehyeok    | ✅ Done |
-| Implement `/info` endpoint (`InfoHandler.java`) | Abdul       | ✅ Done |
-| Maven setup + JUnit 5 tests                     | Shoa        | ✅ Done |
-| CI/CD update + Docker + README                  | Hanseong    | ✅ Done |
-| AWS deployment (Terraform)                      | TBD         | 🔲 Next |
+| Task                                              | Assigned To | Status  |
+| ------------------------------------------------- | ----------- | ------- |
+| Map file (`map.txt`) + `GameMap.java`             | Arindam     | ✅ Done |
+| Implement `/move` endpoint (`MoveHandler.java`)   | Jaehyeok    | ✅ Done |
+| Implement `/info` endpoint (`InfoHandler.java`)   | Abdul       | ✅ Done |
+| Maven setup + JUnit 5 tests                       | Shoa        | ✅ Done |
+| CI/CD update + Docker + README                    | Hanseong    | ✅ Done |
+| AWS deployment (Terraform)                        | Hanseong    | ✅ Done |
+| Implement `/take` endpoint (`TakeHandler.java`)   | Hanseong    | ✅ Done |
+| Implement `/place` endpoint (`PlaceHandler.java`) | Hanseong    | ✅ Done |
+| Implement `/use` endpoint (`UseHandler.java`)     | Hanseong    | ✅ Done |
+| Multiplayer (per-session positions + avatar)      | TBD         | ❌ Not yet |
 
 ---
 
 ## Development Priorities
 
 ```
-Step 1: Implement /move and /info endpoints   ✅ Done
-Step 2: Map file loading (GameMap.java)       ✅ Done
-Step 3: Maven setup + JUnit tests             ✅ Done
-Step 4: Docker + CI/CD update                 ✅ Done
-Step 5: AWS deployment (Terraform)            ← Next
+Step 1: Implement /move and /info endpoints              ✅ Done
+Step 2: Map file loading (GameMap.java)                  ✅ Done
+Step 3: Maven setup + JUnit tests                        ✅ Done
+Step 4: Docker + CI/CD update                            ✅ Done
+Step 5: AWS deployment (Terraform + Elastic IP)          ✅ Done
+Step 6: Implement /take, /place, /use endpoints          ✅ Done
+Step 7: Multiplayer (per-session positions + avatars)    ❌ Not yet
 ```
 
 ---
@@ -298,12 +305,17 @@ docker compose up -d
 
 ## Current Endpoints
 
-| Endpoint     | Status     | Response                             |
-| ------------ | ---------- | ------------------------------------ |
-| `GET /test`  | ✅ Working | `{"name":"Japan", ...}`              |
-| `GET /hello` | ✅ Working | `{"message":"Hello from COMP3050!"}` |
-| `GET /move`  | ✅ Working | `{"y": Y, "x": X}` or 204            |
-| `GET /info`  | ✅ Working | 11x11 tile grid JSON or 204          |
+| Endpoint       | Status     | Example Response                                  |
+| -------------- | ---------- | ------------------------------------------------- |
+| `GET /test`    | ✅ Working | `{"name":"Japan", ...}`                           |
+| `GET /hello`   | ✅ Working | `{"message":"Hello from COMP3050!"}`              |
+| `POST /login`  | ✅ Working | `{"token":"<uuid>"}`                              |
+| `GET /logout`  | ✅ Working | `{"result":"logged out"}`                         |
+| `GET /move`    | ✅ Working | `{"y": Y, "x": X}` or 204                        |
+| `GET /info`    | ✅ Working | 11x11 tile grid JSON or 204                       |
+| `GET /take`    | ✅ Working | `{"result":"ok","inventory":["t"]}` or 204        |
+| `GET /place`   | ✅ Working | `{"result":"ok"}` or 204 if inventory empty       |
+| `GET /use`     | ✅ Working | `{"result":"ok"}` (e.g. D→d door open) or 204    |
 
 ---
 
