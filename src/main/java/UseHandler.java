@@ -64,7 +64,7 @@ public class UseHandler implements HttpHandler {
         char newTile = (tile == 'D') ? 'd' : 'D';
         GameMap.setTile(targetY, targetX, newTile);
 
-        String response = "{\"y\":" + targetY + ",\"x\":" + targetX + ",\"tile\":\"d\"}";
+        String response = "{\"y\":" + targetY + ",\"x\":" + targetX + ",\"tile\":\"" + newTile + "\"}";
         he.getResponseHeaders().set("Content-Type", "application/json");
         he.sendResponseHeaders(200, response.getBytes().length);
         OutputStream os = he.getResponseBody();

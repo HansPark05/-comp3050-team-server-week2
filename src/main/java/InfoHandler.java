@@ -61,7 +61,8 @@ public class InfoHandler implements HttpHandler {
                 if (GameMap.isInBounds(row, col)) {
                     tile = String.valueOf(GameMap.getTile(row, col));
                 } else {
-                    tile = " ";
+                    tile = "g";
+
                 }
                 info.append("\"").append(tile).append("\"");
             }
