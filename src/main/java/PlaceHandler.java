@@ -37,8 +37,9 @@ public class PlaceHandler implements HttpHandler {
         int x = Test.playerX;
         char currentTile = GameMap.getTile(y, x);
 
-        // Can only place item on grass (empty ground)
-        if (currentTile != 'g') {
+        boolean isWalkable = !GameMap.isBlocking(y, x);
+        boolean hasItem = (currentTile == 'a' || currentTile == 'c' || currentTile == 'h' || currentTile == 'k');
+        if (!isWalkable || hasItem) {
             he.sendResponseHeaders(204, -1);
             he.close();
             return;

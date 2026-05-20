@@ -13,7 +13,7 @@ public class SessionManager {
     }
 
     public String createSession(String username) {
-        String token = UUID.randomUUID().toString();
+        String token = UUID.randomUUID().toString().replace("-", "");
         sessions.put(token, username);
         return token;
     }
