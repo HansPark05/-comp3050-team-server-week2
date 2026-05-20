@@ -20,6 +20,9 @@ public class Test {
         server.createContext("/info", new InfoHandler());
         server.createContext("/login",  new LoginHandler());
         server.createContext("/logout", new LogoutHandler());
+        server.createContext("/take",  new TakeHandler());
+        server.createContext("/place", new PlaceHandler());
+        server.createContext("/use",   new UseHandler());
 
         server.setExecutor(null);
         server.start();
