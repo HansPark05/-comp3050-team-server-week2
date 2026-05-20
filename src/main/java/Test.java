@@ -8,7 +8,8 @@ public class Test {
     public static int playerY = 5;
     public static int playerX = 5;
     // Player inventory - stores collected items
-    public static java.util.List<Character> inventory = new java.util.ArrayList<>()
+    public static java.util.List<Character> inventory = new java.util.ArrayList<>();
+    
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
