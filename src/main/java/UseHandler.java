@@ -51,25 +51,25 @@ public class UseHandler implements HttpHandler {
             return;
         }
 
-        char tile = GameMap.getTile(targetY, targetX);
+        synchronized (GameMap.class) {
+            char tile = GameMap.getTile(targetY, targetX);
 
-        // Only interact with doors (open or closed)
-        if (tile != 'D' && tile != 'd') {
-            he.sendResponseHeaders(204, -1);
-            he.close();
-            return;
+            if (tile != 'D' && tile != 'd') {
+                he.sendResponseHeaders(204, -1);
+                he.close();
+                return;
+            }
+
+            char newTile = (tile == 'D') ? 'd' : 'D';
+            GameMap.setTile(targetY, targetX, newTile);
+
+            String response = "{\"y\":" + targetY + ",\"x\":" + targetX + ",\"tile\":\"" + newTile + "\"}";
+            he.getResponseHeaders().set("Content-Type", "application/json");
+            he.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = he.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
         }
-
-        // Toggle door state: D → d (open), d → D (close)
-        char newTile = (tile == 'D') ? 'd' : 'D';
-        GameMap.setTile(targetY, targetX, newTile);
-
-        String response = "{\"y\":" + targetY + ",\"x\":" + targetX + ",\"tile\":\"" + newTile + "\"}";
-        he.getResponseHeaders().set("Content-Type", "application/json");
-        he.sendResponseHeaders(200, response.getBytes().length);
-        OutputStream os = he.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
     }
 
     // Extract a query parameter value by key from the request URL
