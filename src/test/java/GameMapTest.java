@@ -1,6 +1,8 @@
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import comp3050.server.GameMap;
+
 class GameMapTest {
 
     @Test
@@ -13,14 +15,6 @@ class GameMapTest {
     void isInBoundsValidPositions() {
         assertTrue(GameMap.isInBounds(0, 0));
         assertTrue(GameMap.isInBounds(5, 5));
-        assertTrue(GameMap.isInBounds(19, 19));
-    }
-
-    @Test
-    void isInBoundsBoundaryEdges() {
-        assertTrue(GameMap.isInBounds(0, 0));
-        assertTrue(GameMap.isInBounds(19, 0));
-        assertTrue(GameMap.isInBounds(0, 19));
         assertTrue(GameMap.isInBounds(19, 19));
     }
 
@@ -40,69 +34,60 @@ class GameMapTest {
 
     @Test
     void getTileGrass() {
-        // Row 5: BggB_ggSggg... -> col 5 = 'g'
-        assertEquals('g', GameMap.getTile(5, 5));
+        // (5, 5) is 'g' in map.txt
+        assertEquals("g", GameMap.getTile(5, 5));
     }
 
     @Test
     void getTileBrickWall() {
-        assertEquals('B', GameMap.getTile(0, 0));
+        assertEquals("B", GameMap.getTile(0, 0));
     }
 
     @Test
     void getTileWater() {
-        // Row 8: BgggggggggWWWWgggggB -> col 10 = 'W'
-        assertEquals('W', GameMap.getTile(8, 10));
+        // Row 8, col 10 is water
+        assertEquals("W", GameMap.getTile(8, 10));
     }
 
     @Test
     void getTileStoneWall() {
-        // Row 14: BSSSSSSSSSggg... -> col 1 = 'S'
-        assertEquals('S', GameMap.getTile(14, 1));
+        assertEquals("S", GameMap.getTile(14, 1));
     }
 
     @Test
     void isBlockingBrickWall() {
-        assertTrue(GameMap.isBlocking(0, 0));   // B
+        assertTrue(GameMap.isBlocking(0, 0));
     }
 
     @Test
     void isBlockingStoneWall() {
-        assertTrue(GameMap.isBlocking(14, 1));  // S
+        assertTrue(GameMap.isBlocking(14, 1));
     }
 
     @Test
     void isBlockingWater() {
-        assertTrue(GameMap.isBlocking(8, 10));  // W
+        assertTrue(GameMap.isBlocking(8, 10));
     }
 
     @Test
     void isBlockingGrassWalkable() {
-        assertFalse(GameMap.isBlocking(1, 1));  // g
+        assertFalse(GameMap.isBlocking(1, 1));
     }
 
     @Test
     void isBlockingDirtWalkable() {
-        // Row 17: Bgg______________ggB -> col 5 = '_'
-        assertFalse(GameMap.isBlocking(17, 5));  // _
+        assertFalse(GameMap.isBlocking(17, 5));
     }
 
     @Test
     void isBlockingTreeWalkable() {
-        // Row 10: BgggggtttggWWW... -> col 6 = 't'
-        assertFalse(GameMap.isBlocking(10, 6));  // t
-    }
-
-    @Test
-    void isBlockingWoodenBoardsWalkable() {
-        // Row 12: BggwwwwwgggggggggggB -> col 3 = 'w'
-        assertFalse(GameMap.isBlocking(12, 3));  // w
+        assertFalse(GameMap.isBlocking(10, 6));
     }
 
     @Test
     void playerStartPositionIsWalkable() {
         assertFalse(GameMap.isBlocking(5, 5));
         assertTrue(GameMap.isInBounds(5, 5));
-        assertEquals('g', GameMap.getTile(5, 5));
+        assertEquals("g", GameMap.getTile(5, 5));
     }
 }

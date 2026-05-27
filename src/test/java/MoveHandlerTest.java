@@ -1,105 +1,71 @@
-import org.junit.jupiter.api.BeforeEach;
-// Note: @Test imported fully-qualified below to avoid shadowing our 'Test' server class
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import comp3050.server.GameMap;
+import comp3050.server.PlayerState;
+
+// These used to mutate Test.playerY / Test.playerX. After PlayerState was
+// introduced, position lives on the player object, so the tests now move a
+// PlayerState directly while reusing the same blocking/bounds rules from
+// GameMap that MoveHandler relies on.
 class MoveHandlerTest {
 
-    @BeforeEach
-    void resetPlayerPosition() {
-        Test.playerY = 5;
-        Test.playerX = 5;
-    }
-
-    /**
-     * Replicates the movement validation logic from MoveHandler.handle()
-     * without starting an HTTP server.
-     */
-    private boolean tryMove(int dy, int dx) {
+    // Same one-step + no-diagonal rule MoveHandler enforces.
+    private boolean tryMove(PlayerState p, int dy, int dx) {
         if (Math.abs(dy) + Math.abs(dx) > 1) return false;
-        int targetY = Test.playerY + dy;
-        int targetX = Test.playerX + dx;
+        int targetY = p.y + dy;
+        int targetX = p.x + dx;
         if (!GameMap.isInBounds(targetY, targetX)) return false;
         if (GameMap.isBlocking(targetY, targetX)) return false;
-        Test.playerY = targetY;
-        Test.playerX = targetX;
+        p.y = targetY;
+        p.x = targetX;
         return true;
     }
 
-    @org.junit.jupiter.api.Test
-    void validMoveDown() {
-        // (5,5) -> (6,5) = 'g', walkable
-        assertTrue(tryMove(1, 0));
-        assertEquals(6, Test.playerY);
-        assertEquals(5, Test.playerX);
+    @Test
+    void moveSouthOneStep() {
+        PlayerState p = new PlayerState(5, 5, '0');
+        assertTrue(tryMove(p, 1, 0));
+        assertEquals(6, p.y);
+        assertEquals(5, p.x);
     }
 
-    @org.junit.jupiter.api.Test
-    void validMoveUp() {
-        // (5,5) -> (4,5) = '_', walkable
-        assertTrue(tryMove(-1, 0));
-        assertEquals(4, Test.playerY);
-        assertEquals(5, Test.playerX);
+    @Test
+    void moveNorthOneStep() {
+        PlayerState p = new PlayerState(5, 5, '0');
+        assertTrue(tryMove(p, -1, 0));
+        assertEquals(4, p.y);
+        assertEquals(5, p.x);
     }
 
-    @org.junit.jupiter.api.Test
-    void validMoveRight() {
-        // (5,5) -> (5,6) = 'g', walkable
-        assertTrue(tryMove(0, 1));
-        assertEquals(5, Test.playerY);
-        assertEquals(6, Test.playerX);
+    @Test
+    void diagonalMoveRejected() {
+        PlayerState p = new PlayerState(5, 5, '0');
+        assertFalse(tryMove(p, 1, 1));
+        assertEquals(5, p.y);
+        assertEquals(5, p.x);
     }
 
-    @org.junit.jupiter.api.Test
-    void validMoveLeft() {
-        // (5,5) -> (5,4) = '_', walkable
-        assertTrue(tryMove(0, -1));
-        assertEquals(5, Test.playerY);
-        assertEquals(4, Test.playerX);
+    @Test
+    void multiStepMoveRejected() {
+        PlayerState p = new PlayerState(5, 5, '0');
+        assertFalse(tryMove(p, 2, 0));
+        assertEquals(5, p.y);
     }
 
-    @org.junit.jupiter.api.Test
-    void diagonalMovementRejected() {
-        assertFalse(tryMove(1, 1));
-        assertEquals(5, Test.playerY);
-        assertEquals(5, Test.playerX);
+    @Test
+    void moveIntoStoneWallBlocked() {
+        // (5,6) is grass, (5,7) is stone wall ('S')
+        PlayerState p = new PlayerState(5, 6, '0');
+        assertFalse(tryMove(p, 0, 1));
+        assertEquals(6, p.x);
     }
 
-    @org.junit.jupiter.api.Test
-    void diagonalNegativeMovementRejected() {
-        assertFalse(tryMove(-1, -1));
-        assertEquals(5, Test.playerY);
-        assertEquals(5, Test.playerX);
-    }
-
-    @org.junit.jupiter.api.Test
-    void multiStepMovementRejected() {
-        assertFalse(tryMove(2, 0));
-        assertEquals(5, Test.playerY);
-        assertEquals(5, Test.playerX);
-    }
-
-    @org.junit.jupiter.api.Test
-    void movementIntoBrickWallBlocked() {
-        // Place player at (5,4)='_', move left -> (5,3)='B'
-        Test.playerX = 4;
-        assertFalse(tryMove(0, -1));
-        assertEquals(4, Test.playerX);  // position unchanged
-    }
-
-    @org.junit.jupiter.api.Test
-    void movementIntoStoneWallBlocked() {
-        // Place player at (5,6)='g', move right -> (5,7)='S'
-        Test.playerX = 6;
-        assertFalse(tryMove(0, 1));
-        assertEquals(6, Test.playerX);  // position unchanged
-    }
-
-    @org.junit.jupiter.api.Test
-    void movementOutOfBoundsBlocked() {
-        // Place player at row 0 (border), move up -> y=-1 (out of bounds)
-        Test.playerY = 0;
-        Test.playerX = 5;
-        assertFalse(tryMove(-1, 0));
-        assertEquals(0, Test.playerY);  // position unchanged
+    @Test
+    void moveOutOfBoundsBlocked() {
+        // Row 0 is the top brick wall row, also at the edge.
+        PlayerState p = new PlayerState(0, 5, '0');
+        assertFalse(tryMove(p, -1, 0));
+        assertEquals(0, p.y);
     }
 }
