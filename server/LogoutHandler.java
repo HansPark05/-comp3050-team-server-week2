@@ -2,7 +2,6 @@ package comp3050.server;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -24,29 +23,35 @@ public class LogoutHandler implements HttpHandler {
         }
 
         String token = extractSessionParam(he);
-
         if (token == null || token.isEmpty()) {
             sendResponse(he, 401, "{\"error\":\"missing session token\"}");
             return;
         }
 
-        if (!SessionManager.getInstance().invalidate(token)) {
+        // Check the token is valid before touching the map
+        if (SessionManager.getInstance().getUser(token) == null) {
             sendResponse(he, 401, "{\"error\":\"invalid session token\"}");
             return;
         }
 
+        // Remove avatar digit from the player's current tile before ending session
+        int[] pos = SessionManager.getInstance().getPosition(token);
+        String avatarStr = String.valueOf(SessionManager.getInstance().getAvatar(token));
+        GameMap.setTile(pos[0], pos[1],
+                GameMap.getTile(pos[0], pos[1]).replace(avatarStr, ""));
+
+        // Now invalidate the session
+        SessionManager.getInstance().invalidate(token);
+
         sendResponse(he, 200, "{\"message\":\"logged out\"}");
     }
 
-    // Parses ?session=TOKEN from the query string.
     private String extractSessionParam(HttpExchange he) {
         String query = he.getRequestURI().getQuery();
         if (query == null) return null;
         for (String pair : query.split("&")) {
             String[] kv = pair.split("=", 2);
-            if (kv.length == 2 && "session".equals(kv[0])) {
-                return kv[1];
-            }
+            if (kv.length == 2 && "session".equals(kv[0])) return kv[1];
         }
         return null;
     }
