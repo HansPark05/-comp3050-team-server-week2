@@ -3,6 +3,8 @@ import java.io.OutputStream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import comp3050.server.SessionManager;
+import comp3050.server.PlayerState;
+import comp3050.server.GameMap;
 
 public class InfoHandler implements HttpHandler {
 
@@ -34,22 +36,24 @@ public class InfoHandler implements HttpHandler {
             }
         }
 
-        if (session == null || SessionManager.getInstance().getUser(session) == null) {
+        PlayerState player = SessionManager.getInstance().getPlayer(session);
+        if (player == null) {
             he.sendResponseHeaders(401, -1);
             he.close();
             return;
         }
 
-        if (y != Test.playerY || x != Test.playerX) {
+        // Client must ask about its own current location. Otherwise 204.
+        if (y != player.y || x != player.x) {
             he.sendResponseHeaders(204, -1);
             he.close();
             return;
         }
 
-        int top    = Test.playerY - 5;
-        int left   = Test.playerX - 5;
-        int bottom = Test.playerY + 5;
-        int right  = Test.playerX + 5;
+        int top    = player.y - 5;
+        int left   = player.x - 5;
+        int bottom = player.y + 5;
+        int right  = player.x + 5;
 
         StringBuilder info = new StringBuilder("[");
         for (int row = top; row <= bottom; row++) {
@@ -59,10 +63,9 @@ public class InfoHandler implements HttpHandler {
                 if (col > left) info.append(",");
                 String tile;
                 if (GameMap.isInBounds(row, col)) {
-                    tile = String.valueOf(GameMap.getTile(row, col));
+                    tile = GameMap.getTile(row, col);
                 } else {
                     tile = "g";
-
                 }
                 info.append("\"").append(tile).append("\"");
             }
@@ -72,7 +75,7 @@ public class InfoHandler implements HttpHandler {
 
         String response = String.format(
             "{\"y\":%d,\"x\":%d,\"top\":%d,\"left\":%d,\"bottom\":%d,\"right\":%d,\"info\":%s}",
-            Test.playerY, Test.playerX, top, left, bottom, right, info
+            player.y, player.x, top, left, bottom, right, info
         );
 
         he.getResponseHeaders().set("Content-Type", "application/json");

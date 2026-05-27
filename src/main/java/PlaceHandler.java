@@ -3,6 +3,8 @@ import java.io.OutputStream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import comp3050.server.SessionManager;
+import comp3050.server.PlayerState;
+import comp3050.server.GameMap;
 
 public class PlaceHandler implements HttpHandler {
 
@@ -11,43 +13,42 @@ public class PlaceHandler implements HttpHandler {
         he.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         he.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
 
-        // Handle preflight request
         if ("OPTIONS".equals(he.getRequestMethod())) {
             he.sendResponseHeaders(204, -1);
             return;
         }
 
-        // Validate session
         String session = extractParam(he, "session");
-        if (session == null || SessionManager.getInstance().getUser(session) == null) {
+        PlayerState player = SessionManager.getInstance().getPlayer(session);
+        if (player == null) {
             he.sendResponseHeaders(401, -1);
             he.close();
             return;
         }
 
-        // Check if inventory is empty
-        if (Test.inventory.isEmpty()) {
+        if (player.inventory.isEmpty()) {
             he.sendResponseHeaders(204, -1);
             he.close();
             return;
         }
 
-        // Get current player position
-        int y = Test.playerY;
-        int x = Test.playerX;
+        int y = player.y;
+        int x = player.x;
 
         synchronized (GameMap.class) {
-            char currentTile = GameMap.getTile(y, x);
+            String tileStr = GameMap.getTile(y, x);
+            char currentTile = tileStr.isEmpty() ? ' ' : tileStr.charAt(0);
             boolean isWalkable = !GameMap.isBlocking(y, x);
-            boolean hasItem = (currentTile == 'a' || currentTile == 'c' || currentTile == 'h' || currentTile == 'k');
+            boolean hasItem = (currentTile == 'a' || currentTile == 'c'
+                    || currentTile == 'h' || currentTile == 'k');
             if (!isWalkable || hasItem) {
                 he.sendResponseHeaders(204, -1);
                 he.close();
                 return;
             }
 
-            char item = Test.inventory.remove(0);
-            GameMap.setTile(y, x, item);
+            char item = player.inventory.remove(0);
+            GameMap.setTile(y, x, String.valueOf(item));
 
             String response = "{\"item\":\"" + item + "\",\"y\":" + y + ",\"x\":" + x + "}";
             he.getResponseHeaders().set("Content-Type", "application/json");
@@ -58,7 +59,6 @@ public class PlaceHandler implements HttpHandler {
         }
     }
 
-    // Extract a query parameter value by key from the request URL
     private String extractParam(HttpExchange he, String key) {
         String query = he.getRequestURI().getQuery();
         if (query == null) return null;
