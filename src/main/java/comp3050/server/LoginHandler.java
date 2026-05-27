@@ -52,6 +52,11 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
+        // If already logged in, invalidate old session before creating a new one
+        if (SessionManager.getInstance().isLoggedIn(name)) {
+            SessionManager.getInstance().invalidateUser(name);
+        }
+
         String token = SessionManager.getInstance().createSession(name);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
