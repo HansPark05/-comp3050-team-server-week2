@@ -52,7 +52,10 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
-        String token = SessionManager.getInstance().createSession(name);
+        // Spawn the player at (5,5) for now. Avatar is a placeholder '0' here -
+        // Arindam's PR replaces this with the real digit counter (0-9).
+        PlayerState state = new PlayerState(5, 5, '0');
+        String token = SessionManager.getInstance().createSession(name, state);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
 
