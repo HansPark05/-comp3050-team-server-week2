@@ -29,24 +29,23 @@ public class TakeHandler implements HttpHandler {
         // Get current player position
         int y = Test.playerY;
         int x = Test.playerX;
-        char tile = GameMap.getTile(y, x);
 
-        // Check if tile is a takeable item ('.' = one rock, ',' = two rocks)
-        if (tile == '.' || tile == ',') {
-            // Remove item from map and replace with grass
-            GameMap.setTile(y, x, 'g');
-            // Add item to player inventory
-            Test.inventory.add(tile);
-            String response = "{\"item\":\"" + tile + "\",\"y\":" + y + ",\"x\":" + x + "}";
-            he.getResponseHeaders().set("Content-Type", "application/json");
-            he.sendResponseHeaders(200, response.getBytes().length);
-            OutputStream os = he.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-        } else {
-            // No item at current position
-            he.sendResponseHeaders(204, -1);
-            he.close();
+        synchronized (GameMap.class) {
+            char tile = GameMap.getTile(y, x);
+
+            if (tile == 'a' || tile == 'c' || tile == 'h' || tile == 'k') {
+                GameMap.setTile(y, x, 'g');
+                Test.inventory.add(tile);
+                String response = "{\"item\":\"" + tile + "\",\"y\":" + y + ",\"x\":" + x + "}";
+                he.getResponseHeaders().set("Content-Type", "application/json");
+                he.sendResponseHeaders(200, response.getBytes().length);
+                OutputStream os = he.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            } else {
+                he.sendResponseHeaders(204, -1);
+                he.close();
+            }
         }
     }
 

@@ -35,26 +35,27 @@ public class PlaceHandler implements HttpHandler {
         // Get current player position
         int y = Test.playerY;
         int x = Test.playerX;
-        char currentTile = GameMap.getTile(y, x);
 
-        boolean isWalkable = !GameMap.isBlocking(y, x);
-        boolean hasItem = (currentTile == 'a' || currentTile == 'c' || currentTile == 'h' || currentTile == 'k');
-        if (!isWalkable || hasItem) {
-            he.sendResponseHeaders(204, -1);
-            he.close();
-            return;
+        synchronized (GameMap.class) {
+            char currentTile = GameMap.getTile(y, x);
+            boolean isWalkable = !GameMap.isBlocking(y, x);
+            boolean hasItem = (currentTile == 'a' || currentTile == 'c' || currentTile == 'h' || currentTile == 'k');
+            if (!isWalkable || hasItem) {
+                he.sendResponseHeaders(204, -1);
+                he.close();
+                return;
+            }
+
+            char item = Test.inventory.remove(0);
+            GameMap.setTile(y, x, item);
+
+            String response = "{\"item\":\"" + item + "\",\"y\":" + y + ",\"x\":" + x + "}";
+            he.getResponseHeaders().set("Content-Type", "application/json");
+            he.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = he.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
         }
-
-        // Place item from inventory onto the map
-        char item = Test.inventory.remove(0);
-        GameMap.setTile(y, x, item);
-
-        String response = "{\"item\":\"" + item + "\",\"y\":" + y + ",\"x\":" + x + "}";
-        he.getResponseHeaders().set("Content-Type", "application/json");
-        he.sendResponseHeaders(200, response.getBytes().length);
-        OutputStream os = he.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
     }
 
     // Extract a query parameter value by key from the request URL
