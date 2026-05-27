@@ -13,7 +13,7 @@ public class SessionManager {
     }
 
     public String createSession(String username) {
-        String token = UUID.randomUUID().toString();
+        String token = UUID.randomUUID().toString().replace("-", "");
         sessions.put(token, username);
         return token;
     }
@@ -26,5 +26,13 @@ public class SessionManager {
     public boolean invalidate(String token) {
         if (token == null) return false;
         return sessions.remove(token) != null;
+    }
+
+    public boolean isLoggedIn(String username) {
+        return sessions.containsValue(username);
+    }
+
+    public void invalidateUser(String username) {
+        sessions.entrySet().removeIf(e -> e.getValue().equals(username));
     }
 }
