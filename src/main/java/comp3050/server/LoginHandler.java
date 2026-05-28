@@ -56,6 +56,12 @@ public class LoginHandler implements HttpHandler {
         // Arindam's PR replaces this with the real digit counter (0-9).
         PlayerState state = new PlayerState(5, 5, '0');
         String token = SessionManager.getInstance().createSession(name, state);
+        // If already logged in, invalidate old session before creating a new one
+        if (SessionManager.getInstance().isLoggedIn(name)) {
+            SessionManager.getInstance().invalidateUser(name);
+        }
+
+        String token = SessionManager.getInstance().createSession(name);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
 

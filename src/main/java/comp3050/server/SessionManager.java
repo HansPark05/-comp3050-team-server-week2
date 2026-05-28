@@ -35,4 +35,12 @@ public class SessionManager {
         if (token == null) return false;
         return sessions.remove(token) != null;
     }
+
+    public boolean isLoggedIn(String username) {
+        return sessions.containsValue(username);
+    }
+
+    public void invalidateUser(String username) {
+        sessions.entrySet().removeIf(e -> e.getValue().equals(username));
+    }
 }
