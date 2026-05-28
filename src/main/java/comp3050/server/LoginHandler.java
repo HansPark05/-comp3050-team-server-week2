@@ -25,10 +25,11 @@ public class LoginHandler implements HttpHandler {
     public void handle(HttpExchange he) throws IOException {
         addCorsHeaders(he);
 
-        if ("OPTIONS".equalsIgnoreCase(he.getRequestMethod())) {
-            he.sendResponseHeaders(204, -1);
-            return;
-        }
+       if ("OPTIONS".equalsIgnoreCase(he.getRequestMethod())) {
+        addCorsHeaders(he);
+        he.sendResponseHeaders(204, -1);
+        return;
+    }
 
         if (!"POST".equalsIgnoreCase(he.getRequestMethod())) {
             sendResponse(he, 405, "{\"error\":\"method not allowed\"}");
@@ -63,10 +64,11 @@ public class LoginHandler implements HttpHandler {
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
 
-    private void addCorsHeaders(HttpExchange he) {
-        he.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
-        he.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    }
+   private void addCorsHeaders(HttpExchange he) {
+    he.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
+    he.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    he.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+}
 
     private void sendResponse(HttpExchange he, int status, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
