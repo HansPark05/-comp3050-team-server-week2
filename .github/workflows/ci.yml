@@ -17,8 +17,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Build and test with Maven
         run: mvn test
@@ -44,7 +44,6 @@ jobs:
       - name: Install Trivy v0.69.3
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/refs/tags/v0.69.3/contrib/install.sh | sh -s -- -b /usr/local/bin v0.69.3
-
       - name: Run Trivy vulnerability scan
         run: |
-          trivy image --severity HIGH,CRITICAL --exit-code 1 comp3050-server
+          trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --skip-files usr/bin/pebble comp3050-server

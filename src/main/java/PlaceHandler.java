@@ -3,60 +3,70 @@ import java.util.Optional;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import comp3050.server.SessionManager;
 
-/*
- * Handles GET /place?session=...
- *
- * Drops the player's first inventory item onto the tile they are standing on.
- * The ground tile and any player avatar are kept. We only allow one item per
- * tile, so if there is already an item here we refuse and leave the inventory
- * unchanged.
- *
- * Replies: 200 if an item was placed, 204 if there is nothing to place or the
- * tile already has an item, 401 if the session is missing or invalid.
- */
 public class PlaceHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange he) throws IOException {
-        Http.cors(he);
-        if (Http.isPreflight(he)) {
-            Http.empty(he, 204);
+        he.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        he.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+
+        // Handle preflight request
+        if ("OPTIONS".equals(he.getRequestMethod())) {
+            he.sendResponseHeaders(204, -1);
             return;
         }
 
-        Inventory inventory = PlayerInventories.forSession(Http.param(he, "session"));
-        if (inventory == null) {
-            Http.empty(he, 401);
+        // Validate session
+        String session = extractParam(he, "session");
+        if (session == null || SessionManager.getInstance().getUser(session) == null) {
+            he.sendResponseHeaders(401, -1);
+            he.close();
             return;
         }
 
-        // Nothing to place.
-        if (inventory.isEmpty()) {
-            Http.empty(he, 204);
+        // Check if inventory is empty
+        if (Test.inventory.isEmpty()) {
+            he.sendResponseHeaders(204, -1);
+            he.close();
             return;
         }
 
+        // Get current player position
         int y = Test.playerY;
         int x = Test.playerX;
-        if (!GameMap.isInBounds(y, x)) {
-            Http.empty(he, 204);
-            return;
+
+        synchronized (GameMap.class) {
+            char currentTile = GameMap.getTile(y, x);
+            boolean isWalkable = !GameMap.isBlocking(y, x);
+            boolean hasItem = (currentTile == 'a' || currentTile == 'c' || currentTile == 'h' || currentTile == 'k');
+            if (!isWalkable || hasItem) {
+                he.sendResponseHeaders(204, -1);
+                he.close();
+                return;
+            }
+
+            char item = Test.inventory.remove(0);
+            GameMap.setTile(y, x, item);
+
+            String response = "{\"item\":\"" + item + "\",\"y\":" + y + ",\"x\":" + x + "}";
+            he.getResponseHeaders().set("Content-Type", "application/json");
+            he.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = he.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
         }
+    }
 
-        LocationString cell = LocationString.parse(GameMap.getCell(y, x));
-
-        // One item per tile: if something is already here, do nothing.
-        if (cell.findFirstItem().isPresent()) {
-            Http.empty(he, 204);
-            return;
+    // Extract a query parameter value by key from the request URL
+    private String extractParam(HttpExchange he, String key) {
+        String query = he.getRequestURI().getQuery();
+        if (query == null) return null;
+        for (String pair : query.split("&")) {
+            String[] kv = pair.split("=", 2);
+            if (kv.length == 2 && key.equals(kv[0])) return kv[1];
         }
-
-        // Take the first item out of the inventory and put it on the tile.
-        // present() is guaranteed because we checked isEmpty() above.
-        Optional<Item> item = inventory.removeFirst();
-        cell.addToMiddle(item.get().symbol());
-        GameMap.setCell(y, x, cell.render());
-        Http.empty(he, 200);
+        return null;
     }
 }

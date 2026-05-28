@@ -3,76 +3,60 @@ import java.util.Optional;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import comp3050.server.SessionManager;
 
-/*
- * Handles GET /take?session=...
- *
- * Picks up the item on the tile the player is standing on (relative 0,0).
- * Only a, c, h and k can be taken. The ground tile and any player avatar on the
- * cell are kept. If the player already holds an item of the same class, the two
- * are swapped: the held item is dropped on the ground and the new one is taken.
- *
- * Replies: 200 if something was taken, 204 if there is nothing to take (or the
- * inventory is full and nothing of the same class can be swapped), 401 if the
- * session is missing or invalid.
- */
 public class TakeHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange he) throws IOException {
-        Http.cors(he);
-        if (Http.isPreflight(he)) {
-            Http.empty(he, 204);
+        he.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        he.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+
+        // Handle preflight request
+        if ("OPTIONS".equals(he.getRequestMethod())) {
+            he.sendResponseHeaders(204, -1);
             return;
         }
 
-        // Check the session and get this player's inventory (null = not logged in).
-        Inventory inventory = PlayerInventories.forSession(Http.param(he, "session"));
-        if (inventory == null) {
-            Http.empty(he, 401);
+        // Validate session
+        String session = extractParam(he, "session");
+        if (session == null || SessionManager.getInstance().getUser(session) == null) {
+            he.sendResponseHeaders(401, -1);
+            he.close();
             return;
         }
 
-        // Position is still the shared one for now (per-player position is the
-        // next step - see notes). Make sure it is on the map.
+        // Get current player position
         int y = Test.playerY;
         int x = Test.playerX;
-        if (!GameMap.isInBounds(y, x)) {
-            Http.empty(he, 204);
-            return;
+
+        synchronized (GameMap.class) {
+            char tile = GameMap.getTile(y, x);
+
+            if (tile == 'a' || tile == 'c' || tile == 'h' || tile == 'k') {
+                GameMap.setTile(y, x, 'g');
+                Test.inventory.add(tile);
+                String response = "{\"item\":\"" + tile + "\",\"y\":" + y + ",\"x\":" + x + "}";
+                he.getResponseHeaders().set("Content-Type", "application/json");
+                he.sendResponseHeaders(200, response.getBytes().length);
+                OutputStream os = he.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            } else {
+                he.sendResponseHeaders(204, -1);
+                he.close();
+            }
         }
+    }
 
-        LocationString cell = LocationString.parse(GameMap.getCell(y, x));
-
-        // Is there an item on this tile?
-        Optional<Character> itemChar = cell.findFirstItem();
-        if (itemChar.isEmpty()) {
-            Http.empty(he, 204);
-            return;
+    // Extract a query parameter value by key from the request URL
+    private String extractParam(HttpExchange he, String key) {
+        String query = he.getRequestURI().getQuery();
+        if (query == null) return null;
+        for (String pair : query.split("&")) {
+            String[] kv = pair.split("=", 2);
+            if (kv.length == 2 && key.equals(kv[0])) return kv[1];
         }
-
-        // findFirstItem only returns a, c, h or k, so this is always present.
-        Item incoming = Item.fromSymbol(itemChar.get()).get();
-
-        // Add it to the inventory. take() returns an item of the same class that
-        // was swapped out (if any), or throws if the inventory is full.
-        Optional<Item> displaced;
-        try {
-            displaced = inventory.take(incoming);
-        } catch (Inventory.InventoryFullException full) {
-            Http.empty(he, 204);
-            return;
-        }
-
-        // Remove the taken item from the tile.
-        cell.removeFromMiddle(incoming.symbol());
-
-        // If we swapped, drop the old item where we are standing.
-        if (displaced.isPresent()) {
-            cell.addToMiddle(displaced.get().symbol());
-        }
-
-        GameMap.setCell(y, x, cell.render());
-        Http.empty(he, 200);
+        return null;
     }
 }

@@ -6,21 +6,28 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
     private static final SessionManager INSTANCE = new SessionManager();
-    private final Map<String, String> sessions = new ConcurrentHashMap<>();
+
+    private final Map<String, PlayerState> sessions = new ConcurrentHashMap<>();
 
     public static SessionManager getInstance() {
         return INSTANCE;
     }
 
-    public String createSession(String username) {
+    public String createSession(String username, PlayerState state) {
+        state.username = username;
         String token = UUID.randomUUID().toString().replace("-", "");
-        sessions.put(token, username);
+        sessions.put(token, state);
         return token;
     }
 
-    public String getUser(String token) {
+    public PlayerState getPlayer(String token) {
         if (token == null) return null;
         return sessions.get(token);
+    }
+
+    public String getUser(String token) {
+        PlayerState p = getPlayer(token);
+        return p == null ? null : p.username;
     }
 
     public boolean invalidate(String token) {
@@ -29,10 +36,11 @@ public class SessionManager {
     }
 
     public boolean isLoggedIn(String username) {
-        return sessions.containsValue(username);
+        return sessions.values().stream()
+                .anyMatch(p -> username.equals(p.username));
     }
 
     public void invalidateUser(String username) {
-        sessions.entrySet().removeIf(e -> e.getValue().equals(username));
+        sessions.entrySet().removeIf(e -> username.equals(e.getValue().username));
     }
 }
