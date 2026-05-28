@@ -6,19 +6,27 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
     private static final SessionManager INSTANCE = new SessionManager();
-    private final Map<String, String> sessions = new ConcurrentHashMap<>();
+
+    // token -> player state. ConcurrentHashMap so multiple request threads
+    // can read/write safely without our own locking.
+    private final Map<String, PlayerState> sessions = new ConcurrentHashMap<>();
 
     public static SessionManager getInstance() {
         return INSTANCE;
     }
 
-    public String createSession(String username) {
+    // Username is currently only used by LoginHandler for the credential
+    // check, we don't store it here. If we need it later we can add a
+    // username field to PlayerState.
+    public String createSession(String username, PlayerState state) {
+        // Strip the dashes so the token is just letters and digits,
+        // which is what the v3 spec asks for.
         String token = UUID.randomUUID().toString().replace("-", "");
-        sessions.put(token, username);
+        sessions.put(token, state);
         return token;
     }
 
-    public String getUser(String token) {
+    public PlayerState getPlayer(String token) {
         if (token == null) return null;
         return sessions.get(token);
     }

@@ -3,6 +3,7 @@ import java.io.OutputStream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import comp3050.server.SessionManager;
+import comp3050.server.PlayerState;
 import comp3050.server.GameMap;
 
 public class MoveHandler implements HttpHandler {
@@ -32,8 +33,9 @@ public class MoveHandler implements HttpHandler {
             }
         }
 
-        // Validate session
-        if (session == null || SessionManager.getInstance().getUser(session) == null) {
+        // Look up the player for this session. Null means token is invalid.
+        PlayerState player = SessionManager.getInstance().getPlayer(session);
+        if (player == null) {
             he.sendResponseHeaders(401, -1);
             he.close();
             return;
@@ -45,10 +47,8 @@ public class MoveHandler implements HttpHandler {
             return;
         }
 
-        // Get current position from session (replaces Test.playerY / Test.playerX)
-        int[] pos = SessionManager.getInstance().getPosition(session);
-        int oldY = pos[0];
-        int oldX = pos[1];
+        int oldY = player.y;
+        int oldX = player.x;
         int targetY = oldY + dy;
         int targetX = oldX + dx;
 
@@ -59,12 +59,13 @@ public class MoveHandler implements HttpHandler {
         }
 
         // Remove avatar digit from old tile, append to new tile
-        String avatarStr = String.valueOf(SessionManager.getInstance().getAvatar(session));
+        String avatarStr = String.valueOf(player.avatar);
         GameMap.setTile(oldY, oldX, GameMap.getTile(oldY, oldX).replace(avatarStr, ""));
         GameMap.setTile(targetY, targetX, GameMap.getTile(targetY, targetX) + avatarStr);
 
-        // Save new position in session
-        SessionManager.getInstance().setPosition(session, targetY, targetX);
+        // Save new position back into the session
+        player.y = targetY;
+        player.x = targetX;
 
         String response = String.format("{\"y\": %d, \"x\": %d}", targetY, targetX);
         he.getResponseHeaders().set("Content-Type", "application/json");
