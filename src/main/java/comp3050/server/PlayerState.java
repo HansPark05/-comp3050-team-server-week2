@@ -3,9 +3,8 @@ package comp3050.server;
 import java.util.ArrayList;
 import java.util.List;
 
-// Per-player state held by SessionManager.
-// One PlayerState exists per active session.
 public class PlayerState {
+    public String username;
     public int y;
     public int x;
     public char avatar;
