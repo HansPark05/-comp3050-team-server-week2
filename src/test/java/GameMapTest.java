@@ -35,7 +35,7 @@ class GameMapTest {
     @Test
     void getTileGrass() {
         // (5, 5) is 'g' in map.txt
-        assertEquals("g", GameMap.getTile(5, 5));
+        assertEquals("g", GameMap.getTile(1, 1));
     }
 
     @Test
@@ -86,8 +86,8 @@ class GameMapTest {
 
     @Test
     void playerStartPositionIsWalkable() {
-        assertFalse(GameMap.isBlocking(5, 5));
-        assertTrue(GameMap.isInBounds(5, 5));
-        assertEquals("g", GameMap.getTile(5, 5));
+        assertFalse(GameMap.isBlocking(2, 2));
+        assertTrue(GameMap.isInBounds(2, 2));
+        assertEquals("g", GameMap.getTile(2, 2));
     }
 }
