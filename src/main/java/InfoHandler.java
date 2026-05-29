@@ -14,6 +14,7 @@ public class InfoHandler implements HttpHandler {
         he.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
 
         if ("OPTIONS".equals(he.getRequestMethod())) {
+            he.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
             he.sendResponseHeaders(204, -1);
             return;
         }
