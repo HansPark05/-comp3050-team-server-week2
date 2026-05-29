@@ -1,11 +1,23 @@
 import java.io.IOException;
-import java.io.OutputStream;
+import java.util.Optional;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import comp3050.server.SessionManager;
 import comp3050.server.PlayerState;
 import comp3050.server.GameMap;
 
+/*
+  Handles GET /place?session=...
+ 
+  Drops the player's first inventory item onto the tile they are standing on.
+  The ground tile and any player avatar are kept. We only allow one item per
+  tile, so if there is already an item here we refuse and leave the inventory
+  unchanged.
+ 
+  Replies: 200 if an item was placed, 204 if there is nothing to place or the
+  tile already has an item, 401 if the session is missing or invalid
+ */
 public class PlaceHandler implements HttpHandler {
 
     @Override
@@ -26,6 +38,7 @@ public class PlaceHandler implements HttpHandler {
             return;
         }
 
+        // Nothing to place
         if (player.inventory.isEmpty()) {
             he.sendResponseHeaders(204, -1);
             he.close();
@@ -34,28 +47,29 @@ public class PlaceHandler implements HttpHandler {
 
         int y = player.y;
         int x = player.x;
+        if (!GameMap.isInBounds(y, x)) {
+            he.sendResponseHeaders(204, -1);
+            he.close();
+            return;
+        }
 
         synchronized (GameMap.class) {
-            String tileStr = GameMap.getTile(y, x);
-            char currentTile = tileStr.isEmpty() ? ' ' : tileStr.charAt(0);
-            boolean isWalkable = !GameMap.isBlocking(y, x);
-            boolean hasItem = (currentTile == 'a' || currentTile == 'c'
-                    || currentTile == 'h' || currentTile == 'k');
-            if (!isWalkable || hasItem) {
+            LocationString cell = LocationString.parse(GameMap.getTile(y, x));
+
+            // One item per tile: if something is already here, do nothing
+            if (cell.findFirstItem().isPresent()) {
                 he.sendResponseHeaders(204, -1);
                 he.close();
                 return;
             }
 
+            // Take the first item out of the inventory and put it on the tile
             char item = player.inventory.remove(0);
-            GameMap.setTile(y, x, String.valueOf(item));
+            cell.addToMiddle(item);
+            GameMap.setTile(y, x, cell.render());
 
-            String response = "{\"item\":\"" + item + "\",\"y\":" + y + ",\"x\":" + x + "}";
-            he.getResponseHeaders().set("Content-Type", "application/json");
-            he.sendResponseHeaders(200, response.getBytes().length);
-            OutputStream os = he.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            he.sendResponseHeaders(200, -1);
+            he.close();
         }
     }
 
