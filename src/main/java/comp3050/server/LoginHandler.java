@@ -59,7 +59,7 @@ public class LoginHandler implements HttpHandler {
             SessionManager.getInstance().invalidateUser(name);
         }
 
-        PlayerState state = new PlayerState(5, 5, '0');
+        PlayerState state = new PlayerState(2, 2, '0');
         String token = SessionManager.getInstance().createSession(name, state);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
