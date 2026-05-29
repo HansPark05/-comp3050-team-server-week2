@@ -25,11 +25,11 @@ public class LoginHandler implements HttpHandler {
     public void handle(HttpExchange he) throws IOException {
         addCorsHeaders(he);
 
-       if ("OPTIONS".equalsIgnoreCase(he.getRequestMethod())) {
-        addCorsHeaders(he);
-        he.sendResponseHeaders(204, -1);
-        return;
-    }
+        if ("OPTIONS".equalsIgnoreCase(he.getRequestMethod())) {
+            addCorsHeaders(he);
+            he.sendResponseHeaders(204, -1);
+            return;
+        }
 
         if (!"POST".equalsIgnoreCase(he.getRequestMethod())) {
             sendResponse(he, 405, "{\"error\":\"method not allowed\"}");
@@ -37,7 +37,9 @@ public class LoginHandler implements HttpHandler {
         }
 
         String body = new String(he.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        Map<String, String> params = parseForm(body);
+        Map<String, String> params = body.trim().startsWith("{")
+                ? parseJson(body)
+                : parseForm(body);
         String name     = params.get("name");
         String encpswrd = params.get("encpswrd");
 
@@ -53,22 +55,20 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
-        // Invalidate existing session if already logged in
         if (SessionManager.getInstance().isLoggedIn(name)) {
             SessionManager.getInstance().invalidateUser(name);
         }
 
-        // Create new session with player state (avatar placeholder, will be replaced by Arindam's PR)
         PlayerState state = new PlayerState(5, 5, '0');
         String token = SessionManager.getInstance().createSession(name, state);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
 
-   private void addCorsHeaders(HttpExchange he) {
-    he.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
-    he.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    he.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
-}
+    private void addCorsHeaders(HttpExchange he) {
+        he.getResponseHeaders().set("Access-Control-Allow-Origin",  "*");
+        he.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        he.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+    }
 
     private void sendResponse(HttpExchange he, int status, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
@@ -77,6 +77,19 @@ public class LoginHandler implements HttpHandler {
         try (OutputStream os = he.getResponseBody()) {
             os.write(bytes);
         }
+    }
+
+    private Map<String, String> parseJson(String body) {
+        Map<String, String> params = new HashMap<>();
+        if (body == null || body.isEmpty()) return params;
+        body = body.trim().replaceAll("[{}\"]", "");
+        for (String pair : body.split(",")) {
+            String[] kv = pair.split(":", 2);
+            if (kv.length == 2) {
+                params.put(kv[0].trim(), kv[1].trim());
+            }
+        }
+        return params;
     }
 
     private Map<String, String> parseForm(String body) {
