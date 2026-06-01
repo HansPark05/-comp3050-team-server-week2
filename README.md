@@ -55,6 +55,8 @@ The client computes `SHA-256("Baelin;Nice day for fishing.")` and sends the hex 
 { "session": "bf227818e519487c9904b5f2583ae10e" }
 ```
 
+If the same user logs in again while already online, the previous session and avatar are removed automatically before the new session is created.
+
 ---
 
 ## Game Map
@@ -66,7 +68,7 @@ BBBBBBBBBBBBBBBBBBBB
 BggggggggggggggggggB
 BggggggggggggggggggB
 BggBBBBBgggggggggggB
-BggBwwwDgggggkgggggB   ← key (k), closed door (D)
+BggBwwwDgggggkgggggB   ← key (k) at (4,13), closed door (D) at (4,7)
 BggBwwwSgggggggggggB   ← player spawn at (5,5)
 BggBwwwSgggggggggggB
 BggBBBBBgggggggggggB
@@ -74,13 +76,13 @@ BgggggggggWWWWgggggB
 BgggggggggWWWWgggggB
 BgggggtttggWWWgggggB
 BgggggttttgggggggggB
-BggwwwwwgggggagggggB   ← axe (a)
+BggwwwwwgggggagggggB   ← axe (a) at (12,13)
 BggwwwwwgggggggggggB
 BSSSSSSSSSgggggggggB
-BggggggggggggcgggggB   ← cyan potion (c)
+BggggggggggggcgggggB   ← cyan potion (c) at (15,13)
 BggggggggggggggggggB
 Bgg______________ggB
-BggggggghggggggggggB   ← heart potion (h)
+BggggggghggggggggggB   ← heart potion (h) at (18,8)
 BBBBBBBBBBBBBBBBBBBB
 ```
 
@@ -113,24 +115,41 @@ BBBBBBBBBBBBBBBBBBBB
 | `h` | Heart potion | drink |
 | `k` | Key | artifact |
 
-Same-class items swap on TAKE (e.g. taking a heart potion while holding a cyan potion drops the cyan potion and picks up the heart potion).
+Same-class items swap on TAKE (e.g. taking a heart potion while holding a cyan potion drops the cyan potion and picks up the heart potion). Up to 5 items can be held.
+
+Items are stored in the map as multi-char tile strings (e.g. `"gk"` = grass + key). When taken, the item char is removed from the tile and added to the player's inventory list.
 
 ---
 
 ## Multiplayer
 
 - Up to 10 simultaneous players, each assigned a unique avatar digit `0`–`9`
-- Avatar digits appear at the end of tile strings (e.g. `"g0"` = grass + player 0)
+- Avatar digits are appended to the end of tile strings (e.g. `"g0"` = grass + player 0)
 - Players block each other's movement — only one avatar per tile
 - On logout, the avatar is removed from the map tile immediately
+- Re-login of the same user removes the previous avatar and creates a fresh session
 
 ---
 
-## Player Spawn
+## Player Spawn & Navigation
 
-Players spawn at map position **(row 5, col 5)** — wooden boards inside the starting building. The client's initial view is always `posX=5, posY=5`, so `/info?y=5&x=5` returns 200 immediately after login.
+Players spawn at map position **(row 5, col 5)** — wooden boards inside the starting building.
 
-To explore the rest of the map, open the door at **(row 4, col 7)** by standing at (4,6) and pressing USE east.
+- The client's initial view is always `posX=5, posY=5`, so `/info?y=5&x=5` succeeds immediately after login.
+- The `/info` response always reflects the server's authoritative player position — the client syncs its local `posX`/`posY` from the response `y`/`x` fields.
+- To escape the starting room: move to **(4,6)** and **click the door tile** to send `USE dy=0,dx=1`. The door at (4,7) toggles between `D` (closed/blocking) and `d` (open/passable).
+
+### Client Controls
+
+| Key / Action | Effect |
+| ------------ | ------ |
+| W / ↑ | Move north |
+| S / ↓ | Move south |
+| A / ← | Move west |
+| D / → | Move east |
+| T | Take item at current tile |
+| P | Place first inventory item |
+| Mouse click | USE adjacent tile (e.g. toggle door) |
 
 ---
 
@@ -178,7 +197,7 @@ Every push to `main` triggers the full pipeline automatically:
 
 ```
 git push → GitHub Actions
-  └─ build-and-push: mvn compile → docker build → docker push (Docker Hub)
+  └─ build-and-push: mvn test → docker build → docker push (Docker Hub)
   └─ deploy: SSH into EC2 → docker pull → docker stop/rm → docker run
 ```
 
@@ -264,6 +283,18 @@ docs:     documentation only
 test:     add or update tests
 refactor: code restructuring without behaviour change
 ```
+
+---
+
+## Known Bugs Fixed
+
+| Bug | Root Cause | Fix |
+| --- | ---------- | --- |
+| Client position desync (info 204 loop) | `InfoHandler` rejected requests where client's y/x didn't match server position; race condition with async move+info | Removed position check — server always returns authoritative player position |
+| Avatar not removed on logout | `LogoutHandler` invalidated session before reading player position | Read `PlayerState` first, remove avatar from tile, then invalidate |
+| Avatar not removed on re-login | `LoginHandler` called `invalidateUser()` without cleaning up map tile | Retrieve old `PlayerState` via `getPlayerByUsername()` before invalidating |
+| All players assigned avatar `'0'` | No uniqueness check when assigning avatar digits | `findAvailableAvatar()` scans active sessions for used digits |
+| Multiplayer tile blocking | `isBlocking()` only checked structural tiles, not player digits | `MoveHandler` scans target tile string for digit characters |
 
 ---
 
