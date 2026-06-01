@@ -60,8 +60,8 @@ public class LoginHandler implements HttpHandler {
         }
 
         PlayerState state = new PlayerState(1, 6, '0');
-        String currentTile = GameMap.getTile(2, 2);
-        GameMap.setTile(2, 2, currentTile + state.avatar);
+        String currentTile = GameMap.getTile(1, 6);
+        GameMap.setTile(1, 6, currentTile + state.avatar);
         String token = SessionManager.getInstance().createSession(name, state);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }

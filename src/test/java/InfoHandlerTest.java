@@ -47,7 +47,7 @@ class InfoHandlerTest {
 
     @Test
     void centreOfViewIsPlayerTile() {
-        PlayerState p = new PlayerState(5, 5, '0');
+        PlayerState p = new PlayerState(1, 6, '0');
         assertEquals("g", GameMap.getTile(p.y, p.x));
     }
 }
