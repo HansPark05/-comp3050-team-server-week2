@@ -17,8 +17,14 @@ public class LoginHandler implements HttpHandler {
     private static final Map<String, String> USER_HASHES = new HashMap<>();
 
     static {
-        USER_HASHES.put("Baelin",  "3cba718deca5f1bf2ed163f24222844e4abea5e23b6880b5ee4717c02ee1c32d");
-        USER_HASHES.put("NPC-Man", sha256("NPC-Man;sword456"));
+        // Baelin;fishing123
+        USER_HASHES.put("Baelin",   "3cba718deca5f1bf2ed163f24222844e4abea5e23b6880b5ee4717c02ee1c32d");
+        // NPC-Man;sword456  (hardcoded to avoid runtime mismatch)
+        USER_HASHES.put("NPC-Man",  "a94d7383c741e2e09484a1990b16e32c2c0577bda10d5f1642f83730a63ca637");
+        // NPC-Man alternate hash (browser autofill variant)
+        USER_HASHES.put("NPC-Man2", "81ff598c8418912bacd7c91c5bb99bda60ced9d1d9bf4f2c24d029ae3bed5b90");
+        // Player2;comp3050
+        USER_HASHES.put("Player2",  "ca4ce5413b3b7601b74cc79aa2e4e8c1c8e29a2961a0db32add66593050d0396");
     }
 
     @Override
