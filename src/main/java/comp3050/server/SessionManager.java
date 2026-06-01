@@ -1,6 +1,8 @@
 package comp3050.server;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,5 +44,20 @@ public class SessionManager {
 
     public void invalidateUser(String username) {
         sessions.entrySet().removeIf(e -> username.equals(e.getValue().username));
+    }
+
+    public PlayerState getPlayerByUsername(String username) {
+        return sessions.values().stream()
+                .filter(p -> username.equals(p.username))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Set<Character> getUsedAvatars() {
+        Set<Character> used = new HashSet<>();
+        for (PlayerState p : sessions.values()) {
+            used.add(p.avatar);
+        }
+        return used;
     }
 }

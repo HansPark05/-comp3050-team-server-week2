@@ -56,14 +56,28 @@ public class LoginHandler implements HttpHandler {
         }
 
         if (SessionManager.getInstance().isLoggedIn(name)) {
+            PlayerState old = SessionManager.getInstance().getPlayerByUsername(name);
+            if (old != null && GameMap.isInBounds(old.y, old.x)) {
+                String oldTile = GameMap.getTile(old.y, old.x);
+                GameMap.setTile(old.y, old.x, oldTile.replace(String.valueOf(old.avatar), ""));
+            }
             SessionManager.getInstance().invalidateUser(name);
         }
 
-        PlayerState state = new PlayerState(5, 2, '0');
-        String currentTile = GameMap.getTile(5, 2);
-        GameMap.setTile(5, 2, currentTile + state.avatar);
+        char avatar = findAvailableAvatar();
+        PlayerState state = new PlayerState(1, 6, avatar);
+        String currentTile = GameMap.getTile(1, 6);
+        GameMap.setTile(1, 6, currentTile + avatar);
         String token = SessionManager.getInstance().createSession(name, state);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
+    }
+
+    private char findAvailableAvatar() {
+        java.util.Set<Character> used = SessionManager.getInstance().getUsedAvatars();
+        for (char c = '0'; c <= '9'; c++) {
+            if (!used.contains(c)) return c;
+        }
+        return '0';
     }
 
     private void addCorsHeaders(HttpExchange he) {
