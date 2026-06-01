@@ -52,6 +52,17 @@ public class MoveHandler implements HttpHandler {
         int targetY = oldY + dy;
         int targetX = oldX + dx;
 
+        // dy=0, dx=0 is a valid no-op: return current position immediately
+        if (dy == 0 && dx == 0) {
+            String response = String.format("{\"y\": %d, \"x\": %d}", oldY, oldX);
+            he.getResponseHeaders().set("Content-Type", "application/json");
+            he.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = he.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+            return;
+        }
+
         // Bounds and structural blocking check
         if (!GameMap.isInBounds(targetY, targetX) || GameMap.isBlocking(targetY, targetX)) {
             send204(he);
