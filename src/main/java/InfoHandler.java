@@ -44,13 +44,6 @@ public class InfoHandler implements HttpHandler {
             return;
         }
 
-        // Client must ask about its own current location. Otherwise 204.
-        if (y != player.y || x != player.x) {
-            he.sendResponseHeaders(204, -1);
-            he.close();
-            return;
-        }
-
         int top    = player.y - 5;
         int left   = player.x - 5;
         int bottom = player.y + 5;
