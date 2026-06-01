@@ -30,11 +30,18 @@ public class LogoutHandler implements HttpHandler {
             return;
         }
 
-        if (!SessionManager.getInstance().invalidate(token)) {
+        PlayerState player = SessionManager.getInstance().getPlayer(token);
+        if (player == null) {
             sendResponse(he, 401, "{\"error\":\"invalid session token\"}");
             return;
         }
 
+        if (GameMap.isInBounds(player.y, player.x)) {
+            String tile = GameMap.getTile(player.y, player.x);
+            GameMap.setTile(player.y, player.x, tile.replace(String.valueOf(player.avatar), ""));
+        }
+
+        SessionManager.getInstance().invalidate(token);
         sendResponse(he, 200, "{\"message\":\"logged out\"}");
     }
 
