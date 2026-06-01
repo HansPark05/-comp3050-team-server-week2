@@ -4,531 +4,292 @@
 
 This is the team project for **COMP3050 – Software System Development and Operations** at Macquarie University, 2026.
 
-### What We're Building
-
-A **Java HTTP game server** for a 2D tile-based virtual world. The server communicates with a web-based client via a **REST API (API v3)**. The client and tile images are provided by the teaching staff — our team designs, builds, and deploys the server.
-
-### API Endpoints
-
-| Endpoint        | Method | Description                                            | Status             |
-| --------------- | ------ | ------------------------------------------------------ | ------------------ |
-| `/login`        | POST   | Verify name + encrypted password, return session token | ✅ Working         |
-| `/logout`       | GET    | Invalidate session token                               | ✅ Working         |
-| `/move?dy=&dx=` | GET    | Move character N/S/E/W                                 | ✅ Working         |
-| `/info?y=&x=`   | GET    | Return map tile data around player's location          | ✅ Working         |
-| `/take`         | GET    | Pick up item at player's location                      | ✅ Working         |
-| `/place`        | GET    | Drop item from inventory                               | ✅ Working         |
-| `/use?dy=&dx=`  | GET    | Interact with adjacent map element (e.g. open a door)  | ✅ Working         |
-
-### Tech Stack
-
-| Tool                     | Purpose                       |
-| ------------------------ | ----------------------------- |
-| Java                     | Server language               |
-| Maven                    | Build & dependency management |
-| Docker                   | Containerisation              |
-| GitHub Actions           | CI/CD pipeline                |
-| AWS EC2 (ap-southeast-2) | Cloud deployment              |
-| Terraform                | Infrastructure as Code        |
-| Trivy, Semgrep           | Security scanning             |
-
-### Weekly Progress
-
-| Week | Topic             | What We Built                                                                  |
-| ---- | ----------------- | ------------------------------------------------------------------------------ |
-| 1    | Java HTTP server  | Basic `/test` and `/hello` endpoints                                           |
-| 2    | Git + GitHub + CI | Team workflow, GitHub Actions pipeline                                         |
-| 3    | Docker            | Containerised the server                                                       |
-| 4    | JUnit testing     | Automated tests with Maven                                                     |
-| 5    | Kubernetes        | Container orchestration                                                        |
-| 6    | DevSecOps         | Trivy and Semgrep security scanning in CI                                      |
-| 7    | AWS EC2           | Cloud deployment to ap-southeast-2 (Sydney)                                    |
-| 8    | Terraform         | Infrastructure as Code, automated EC2 deployment                               |
-| 9    | CI/CD Pipelines   | Automated build, push, and deploy pipeline with GitHub Actions                 |
-| 10+  | Final API         | `/take`, `/place`, `/use` endpoints; `setTile()` on GameMap; JUnit integration |
+A **Java HTTP game server** for a 2D tile-based virtual world. The server communicates with a web-based client (provided by teaching staff) via a **REST API (API v3)**. Our team designs, builds, tests, secures, and deploys the server.
 
 ---
 
-## Week 9 – CI/CD Pipeline
+## Live Server
 
-### Overview
-
-Automated CI/CD pipeline using GitHub Actions. Every push to main automatically builds a Docker image, pushes it to Docker Hub, and deploys it to AWS EC2 — with no manual steps.
-
-### Pipeline Flow
-
-git push → GitHub Actions triggered → Build Docker image → Push to Docker Hub → SSH into EC2 → Pull new image → Restart container → Live at http://13.211.11.188:8000
-
-### What Was Automated
-
-| Step           | Tool                      | What happens                                        |
-| -------------- | ------------------------- | --------------------------------------------------- |
-| Build          | GitHub Actions + Docker   | Java server compiled and packaged into Docker image |
-| Push           | Docker Hub                | Image stored at hansmq/game-server:latest           |
-| Deploy         | SSH + appleboy/ssh-action | EC2 pulls new image and restarts container          |
-| Infrastructure | Terraform + Elastic IP    | Stable address: 13.211.11.188                       |
-
-### Verified Endpoints
-
-| Endpoint | URL                                    | Status     |
-| -------- | -------------------------------------- | ---------- |
-| /info    | http://13.211.11.188:8000/info?y=5&x=5 | ✅ Working |
-| /move    | http://13.211.11.188:8000/move         | ✅ Working |
-| /hello   | http://13.211.11.188:8000/hello        | ✅ Working |
-
-### GitHub Secrets Used
-
-| Secret              | Purpose                        |
-| ------------------- | ------------------------------ |
-| DOCKERHUB_USERNAME  | Docker Hub login               |
-| DOCKERHUB_TOKEN     | Docker Hub access token        |
-| EC2_SSH_PRIVATE_KEY | SSH private key for EC2 access |
-| EC2_HOST            | Elastic IP: 13.211.11.188      |
-
-### Team Task Breakdown
-
-| Member          | Challenge   | Task                                                                               |
-| --------------- | ----------- | ---------------------------------------------------------------------------------- |
-| Hanseong (Hans) | 4.1         | Full CI/CD pipeline setup, Secrets configuration, Terraform Elastic IP, deploy.yml |
-| Abdul           | 4.2         | Add test job to pipeline (Test → Build → Deploy)                                   |
-| Arindam         | 4.3         | .dockerignore improvements for source code protection                              |
-| Jaehyeok        | 4.4         | Infrastructure automation discussion                                               |
-| Shoa            | 4.2 support | Verify mvn test passes locally                                                     |
+| Property | Value |
+| -------- | ----- |
+| URL | `http://54.66.232.178:8000` |
+| Region | AWS ap-southeast-2 (Sydney) |
+| Deploy | Auto-deploy on push to `main` via GitHub Actions |
 
 ---
 
-## Assessment Details
+## API Endpoints (v3)
 
-| Component               | Marks        | Type       |
-| ----------------------- | ------------ | ---------- |
-| Implemented APIs        | 15 marks     | Team       |
-| Code Quality + Testing  | 10 marks     | Team       |
-| DevOps Process          | 5 marks      | Team       |
-| Individual Presentation | 20 marks     | Individual |
-| **Total**               | **50 marks** |            |
+| Endpoint | Method | Description | Auth |
+| -------- | ------ | ----------- | ---- |
+| `/login` | POST | SHA-256 password auth, returns session token | — |
+| `/logout?session=` | GET | Revoke session token, remove avatar from map | token |
+| `/move?dy=&dx=&session=` | GET | Move character N/S/E/W one step | token |
+| `/info?y=&x=&session=` | GET | Return 11×11 map tile grid centred on player | token |
+| `/take?session=` | GET | Pick up item at current location | token |
+| `/place?session=` | GET | Drop first inventory item at current location | token |
+| `/use?dy=&dx=&session=` | GET | Interact with adjacent map element (e.g. door) | token |
 
-**Due Date:** 5 June 2026, 23:55 (Week 13)
+### Response Codes
 
-**Submission:** Git repository (GitHub) + face-to-face presentation
-
----
-
-## API Specification (v1)
-
-Based on `COMP3050_Team_project_2026_API_v1.pdf`.
-
-### Core Endpoints
-
-| Endpoint            | Method | Description                                         |
-| ------------------- | ------ | --------------------------------------------------- |
-| `/move?dy=DY&dx=DX` | GET    | Move the player character N/S/E/W                   |
-| `/info?y=Y&x=X`     | GET    | Return 11x11 map tile data around player's location |
+| Code | Meaning |
+| ---- | ------- |
+| `200` | Success (with JSON body where applicable) |
+| `204` | No content — blocked, invalid, or nothing to do |
+| `400` | Bad request (missing fields) |
+| `401` | Unauthorized — invalid or missing session token |
 
 ---
 
-### `/move` Details
+## Authentication
 
-Move the player one space in a cardinal direction.
-
-| Direction     | dy  | dx  |
-| ------------- | --- | --- |
-| North (W / ↑) | -1  | 0   |
-| South (S / ↓) | +1  | 0   |
-| West (A / ←)  | 0   | -1  |
-| East (D / →)  | 0   | +1  |
-
-**Valid requests:**
-
-```
-/move?dy=-1&dx=0   → Move North
-/move?dy=-1        → Move North (dx defaults to 0)
-/move?dx=+1        → Move East  (dy defaults to 0)
-/move?dy=0&dx=0    → No movement (valid)
-/move              → No movement (valid)
-```
-
-**Invalid requests (return 204):**
-
-```
-/move?dy=+1&dx=+1  → Diagonal — invalid
-/move?dy=-2&dx=0   → More than one space — invalid
-```
-
-**Responses:**
-
-- `200` + JSON if move succeeded:
+Login sends a POST with a JSON body:
 
 ```json
-{ "y": 0, "x": 6 }
+{ "name": "Baelin", "encpswrd": "<SHA-256 of 'name;password'>" }
 ```
 
-- `204` (empty body) if blocked (wall/water/map edge) or invalid
-
----
-
-### `/info` Details
-
-Returns an 11x11 grid of tile data centred on the player.
-
-**Request:**
-
-```
-/info?y=7&x=5
-```
-
-**Response `200`:**
+The client computes `SHA-256("Baelin;Nice day for fishing.")` and sends the hex digest. The server compares it against its stored hash. On success, a 32-character hex session token is returned:
 
 ```json
-{
-  "y": 7,
-  "x": 5,
-  "top": 2,
-  "left": 0,
-  "bottom": 12,
-  "right": 10,
-  "info": [
-    ["S", "w", "w", "w", "w", "S", "g", "g", "g", "W", "W"],
-    ["S", "w", "w", "w", "w", "S", "g", "g", "W", "W", "g"],
-    ["S", "S", "S", "w", "S", "S", "g", "g", "W", "g", "g"],
-    ["g", "g", ",", "_", "g", "g", "g", "W", "W", "W", "g"],
-    [".", "g", "g", "_", "g", "g", "g", "W", "g", "W", "."],
-    ["_", "_", "_", "_", "g", "g", "W", "W", "g", "W", "W"],
-    ["_", "g", "t", "t", "g", "W", "W", "W", "g", "g", "W"],
-    ["_", "g", "g", "t", "g", "W", "W", "g", "g", "g", "W"],
-    ["_", "g", "g", "g", "g", "g", "g", "g", "g", "g", "W"],
-    ["_", "g", "g", "g", "g", "g", "t", "t", "g", "W", "W"],
-    ["_", "g", "g", "g", "g", "g", "t", "g", "g", "W", ","]
-  ]
-}
+{ "session": "bf227818e519487c9904b5f2583ae10e" }
 ```
-
-**Response `204`** (empty body) if `y` and `x` don't match the player's current location.
 
 ---
 
-### Map Tile Types
+## Game Map
 
-| Symbol | Tile          | Blocks Movement? |
-| ------ | ------------- | ---------------- |
-| `B`    | Brick wall    | ✅ Yes           |
-| `S`    | Stone wall    | ✅ Yes           |
-| `W`    | Water         | ✅ Yes           |
-| `D`    | Door (closed) | ✅ Yes           |
-| `g`    | Grass         | ❌ No            |
-| `_`    | Dirt          | ❌ No            |
-| `d`    | Door (open)   | ❌ No            |
-| `w`    | Wooden boards | ❌ No            |
-| `t`    | Tree          | ❌ No            |
-| `s`    | Sand          | ❌ No            |
-| `f`    | Flagstones    | ❌ No            |
-| `p`    | Pebbles       | ❌ No            |
-| `b`    | Bridge        | ❌ No            |
-| `.`    | One rock      | ❌ No            |
-| `,`    | Two rocks     | ❌ No            |
-| `:`    | Three rocks   | ❌ No            |
-| `;`    | Six rocks     | ❌ No            |
+The server map is a 20×20 grid loaded from `map.txt` at startup.
+
+```
+BBBBBBBBBBBBBBBBBBBB
+BggggggggggggggggggB
+BggggggggggggggggggB
+BggBBBBBgggggggggggB
+BggBwwwDgggggkgggggB   ← key (k), closed door (D)
+BggBwwwSgggggggggggB   ← player spawn at (5,5)
+BggBwwwSgggggggggggB
+BggBBBBBgggggggggggB
+BgggggggggWWWWgggggB
+BgggggggggWWWWgggggB
+BgggggtttggWWWgggggB
+BgggggttttgggggggggB
+BggwwwwwgggggagggggB   ← axe (a)
+BggwwwwwgggggggggggB
+BSSSSSSSSSgggggggggB
+BggggggggggggcgggggB   ← cyan potion (c)
+BggggggggggggggggggB
+Bgg______________ggB
+BggggggghggggggggggB   ← heart potion (h)
+BBBBBBBBBBBBBBBBBBBB
+```
+
+### Tile Types
+
+| Symbol | Tile | Blocks Movement? |
+| ------ | ---- | ---------------- |
+| `B` | Brick wall | ✅ Yes |
+| `S` | Stone wall | ✅ Yes |
+| `W` | Water | ✅ Yes |
+| `D` | Door (closed) | ✅ Yes |
+| `0`–`9` | Player avatars | ✅ Yes (multiplayer) |
+| `d` | Door (open) | ❌ No |
+| `g` | Grass | ❌ No |
+| `_` | Dirt | ❌ No |
+| `w` | Wooden boards | ❌ No |
+| `t` | Tree | ❌ No |
+| `f` | Flagstones | ❌ No |
+| `b` | Bridge | ❌ No |
+| `s` | Sand | ❌ No |
+| `p` | Pebbles | ❌ No |
+| `.` `,` `:` `;` | Rocks | ❌ No |
+
+### Items (takeable)
+
+| Symbol | Item | Class |
+| ------ | ---- | ----- |
+| `a` | Axe | tool |
+| `c` | Cyan potion | drink |
+| `h` | Heart potion | drink |
+| `k` | Key | artifact |
+
+Same-class items swap on TAKE (e.g. taking a heart potion while holding a cyan potion drops the cyan potion and picks up the heart potion).
+
+---
+
+## Multiplayer
+
+- Up to 10 simultaneous players, each assigned a unique avatar digit `0`–`9`
+- Avatar digits appear at the end of tile strings (e.g. `"g0"` = grass + player 0)
+- Players block each other's movement — only one avatar per tile
+- On logout, the avatar is removed from the map tile immediately
+
+---
+
+## Player Spawn
+
+Players spawn at map position **(row 5, col 5)** — wooden boards inside the starting building. The client's initial view is always `posX=5, posY=5`, so `/info?y=5&x=5` returns 200 immediately after login.
+
+To explore the rest of the map, open the door at **(row 4, col 7)** by standing at (4,6) and pressing USE east.
+
+---
+
+## Testing
+
+```bash
+JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.8.9-hotspot" ./mvnw test
+```
+
+**54 unit tests** across 7 test classes — all must pass before merging to `main`.
+
+| Test Class | Coverage |
+| ---------- | -------- |
+| `GameMapTest` (15) | Map loading, bounds, tile types, blocking |
+| `InfoHandlerTest` (5) | Session state, view window |
+| `ItemTest` (7) | Item symbols, classes |
+| `LocationStringTest` (9) | Tile string parsing and rendering |
+| `MoveHandlerTest` (6) | Move validation, wall blocking |
+| `TakeHandlerTest` (7) | Item pickup, class swap, avatar preservation |
+| `PlaceHandlerTest` (5) | Item drop, avatar preservation |
 
 ---
 
 ## Tech Stack
 
-| Tool            | Purpose                       |
-| --------------- | ----------------------------- |
-| Java 18+        | Server language               |
-| Java HttpServer | Built-in HTTP server          |
-| Maven           | Build & dependency management |
-| JUnit 5         | Unit testing                  |
-| Docker          | Containerisation              |
-| Nginx           | Reverse proxy                 |
-| GitHub Actions  | CI/CD pipeline                |
-| AWS + Terraform | Cloud deployment (IaC)        |
+| Tool | Purpose |
+| ---- | ------- |
+| Java 21 (Eclipse Temurin) | Server language |
+| `com.sun.net.httpserver` | Built-in HTTP server (no frameworks) |
+| Maven + `mvnw` | Build and dependency management |
+| JUnit 5 | Unit testing |
+| Docker | Containerisation |
+| Docker Hub (`hansmq/game-server`) | Image registry |
+| GitHub Actions | CI/CD pipeline |
+| AWS EC2 t3.micro | Cloud hosting (ap-southeast-2) |
+| Terraform | Infrastructure as Code |
+| Trivy | Docker image vulnerability scanning |
+| Semgrep | Static application security testing (SAST) |
 
 ---
 
-## Project Task Assignment
+## CI/CD Pipeline
 
-| Task                                              | Assigned To | Status  |
-| ------------------------------------------------- | ----------- | ------- |
-| Map file (`map.txt`) + `GameMap.java`             | Arindam     | ✅ Done |
-| Implement `/move` endpoint (`MoveHandler.java`)   | Jaehyeok    | ✅ Done |
-| Implement `/info` endpoint (`InfoHandler.java`)   | Abdul       | ✅ Done |
-| Maven setup + JUnit 5 tests                       | Shoa        | ✅ Done |
-| CI/CD update + Docker + README                    | Hanseong    | ✅ Done |
-| AWS deployment (Terraform)                        | Hanseong    | ✅ Done |
-| Implement `/take` endpoint (`TakeHandler.java`)   | Hanseong    | ✅ Done |
-| Implement `/place` endpoint (`PlaceHandler.java`) | Hanseong    | ✅ Done |
-| Implement `/use` endpoint (`UseHandler.java`)     | Hanseong    | ✅ Done |
-| Multiplayer (per-session positions + avatar)      | TBD         | ❌ Not yet |
-
----
-
-## Development Priorities
+Every push to `main` triggers the full pipeline automatically:
 
 ```
-Step 1: Implement /move and /info endpoints              ✅ Done
-Step 2: Map file loading (GameMap.java)                  ✅ Done
-Step 3: Maven setup + JUnit tests                        ✅ Done
-Step 4: Docker + CI/CD update                            ✅ Done
-Step 5: AWS deployment (Terraform + Elastic IP)          ✅ Done
-Step 6: Implement /take, /place, /use endpoints          ✅ Done
-Step 7: Multiplayer (per-session positions + avatars)    ❌ Not yet
+git push → GitHub Actions
+  └─ build-and-push: mvn compile → docker build → docker push (Docker Hub)
+  └─ deploy: SSH into EC2 → docker pull → docker stop/rm → docker run
 ```
 
----
+Pipeline defined in `.github/workflows/deploy.yml`.
 
-## How to Run
+### GitHub Secrets Required
 
-### Local (Maven)
-
-```bash
-# Run tests
-JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.8.9-hotspot" ./mvnw test
-
-# Compile only
-JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.8.9-hotspot" ./mvnw compile
-```
-
-### With Docker
-
-```bash
-docker build -t comp3050-server .
-docker run -d -p 8000:8000 comp3050-server
-```
-
-### With Docker Compose (includes Nginx)
-
-```bash
-docker compose up -d
-```
+| Secret | Purpose |
+| ------ | ------- |
+| `DOCKERHUB_USERNAME` | Docker Hub account |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `EC2_SSH_PRIVATE_KEY` | Private key for EC2 SSH |
+| `EC2_HOST` | EC2 public IP (`54.66.232.178`) |
+| `APP_USER` | Game username (passed as env var) |
+| `APP_PASS` | Game password hash (passed as env var) |
 
 ---
 
-## Current Endpoints
+## Security
 
-| Endpoint       | Status     | Example Response                                  |
-| -------------- | ---------- | ------------------------------------------------- |
-| `GET /test`    | ✅ Working | `{"name":"Japan", ...}`                           |
-| `GET /hello`   | ✅ Working | `{"message":"Hello from COMP3050!"}`              |
-| `POST /login`  | ✅ Working | `{"token":"<uuid>"}`                              |
-| `GET /logout`  | ✅ Working | `{"result":"logged out"}`                         |
-| `GET /move`    | ✅ Working | `{"y": Y, "x": X}` or 204                        |
-| `GET /info`    | ✅ Working | 11x11 tile grid JSON or 204                       |
-| `GET /take`    | ✅ Working | `{"result":"ok","inventory":["t"]}` or 204        |
-| `GET /place`   | ✅ Working | `{"result":"ok"}` or 204 if inventory empty       |
-| `GET /use`     | ✅ Working | `{"result":"ok"}` (e.g. D→d door open) or 204    |
+| Tool | What It Catches |
+| ---- | --------------- |
+| Trivy | CVEs in Docker base image and dependencies |
+| Semgrep | Hardcoded credentials in source code |
+| `.gitignore` | Prevents `.pem`, `.env`, `terraform.tfstate` from being committed |
+| GitHub Secrets | Credentials never appear in source code or logs |
 
 ---
 
-## Team Members and Roles
+## Infrastructure (Terraform)
 
-### Week 2 — Git, GitHub & CI
+AWS resources are defined as code in `terraform/` — no manual console clicks needed.
 
-| Name           | Role         | Responsibilities                                                                                                      |
-| -------------- | ------------ | --------------------------------------------------------------------------------------------------------------------- |
-| Hanseong Park  | Team Manager | Created and managed the GitHub repository, reviewed and merged pull requests, set up CI workflow using GitHub Actions |
-| Abdul Karim    | Member A     | Added a new `/hello` endpoint (HelloHandler.java)                                                                     |
-| Jaehyeok Park  | Member B     | Updated and fixed the HTML client                                                                                     |
-| Arindam Biswas | Member C     | Updated README documentation                                                                                          |
-
-### Week 3 — Docker & Containerisation
-
-| Name           | Role         | Responsibilities                                     |
-| -------------- | ------------ | ---------------------------------------------------- |
-| Hanseong Park  | Team Manager | Managed the repo, reviewed and merged all PRs        |
-| Abdul Karim    | Member A     | Wrote the Dockerfile to containerise the Java server |
-| Shoa           | Member B     | Created Docker Compose setup with Nginx              |
-| Arindam Biswas | Member C     | Built and pushed the image to Docker Hub             |
-| Jaehyeok Park  | Member D     | Added Docker build step to the CI workflow           |
-
-### Week 4 — Testing & TDD
-
-| Name           | Role         | Responsibilities                                                 |
-| -------------- | ------------ | ---------------------------------------------------------------- |
-| Hanseong Park  | Team Manager | Managed the repo, reviewed and merged all PRs                    |
-| Abdul Karim    | Member A     | Wrote JUnit tests for coordinate boundary handling               |
-| Jaehyeok Park  | Member B     | Wrote JUnit tests for move validation logic                      |
-| Arindam Biswas | Member C     | Wrote JUnit tests for map loading and tile type checks           |
-| Shoa           | Member D     | Set up Maven project structure and JUnit 5 dependency in pom.xml |
-
-### Week 5 — Core API Implementation
-
-| Name           | Role         | Responsibilities                                                                                                  |
-| -------------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Hanseong Park  | Team Manager | Updated CI pipeline, reviewed and merged PRs, coordinated task assignments for `/move` and `/info` implementation |
-| Abdul Karim    | Member A     | Started implementation of `/info` endpoint (InfoHandler.java)                                                     |
-| Jaehyeok Park  | Member B     | Started implementation of `/move` endpoint (MoveHandler.java)                                                     |
-| Arindam Biswas | Member C     | Started map file creation (map.txt) and GameMap.java loader                                                       |
-| Shoa           | Member D     | Maven project setup and initial JUnit test structure                                                              |
-
-### Week 6 — DevSecOps
-
-| Name           | Role         | Responsibilities                                                                                               |
-| -------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| Hanseong Park  | Team Manager | CI/CD security pipeline (Semgrep + Trivy), secrets management (.env + .gitignore), reviewed and merged all PRs |
-| Abdul Karim    | Member A     | Created SessionManager.java, LoginHandler.java, LogoutHandler.java                                             |
-| Jaehyeok Park  | Member B     | Installed Semgrep, ran source code scan, documented results                                                    |
-| Shoa           | Member C     | Created .semgrep.yml custom rule file for hardcoded credential detection                                       |
-| Arindam Biswas | Member D     | Ran Trivy Docker image scan, updated Dockerfile to multi-stage build                                           |
-
-### Week 7 — AWS Cloud Deployment
-
-| Name           | Role         | Responsibilities                                                                         |
-| -------------- | ------------ | ---------------------------------------------------------------------------------------- |
-| Hanseong Park  | Team Manager | EC2 instance management, project planning, reviewed and merged all PRs                   |
-| Arindam Biswas | Member A     | Challenge 2.1: Installed nginx on EC2 (without Docker)                                   |
-| Abdul Karim    | Member B     | Challenge 2.2: Installed Docker on EC2, ran nginx container                              |
-| Shoa           | Member C     | Challenge 2.3 Part A: Compiled Java files locally, uploaded .class files to EC2 via sftp |
-| Jaehyeok Park  | Member D     | Challenge 2.3 Part B: Installed Java on EC2, ran Java server, verified endpoints         |
-
----
-
-## Week 7 – AWS Cloud Deployment
-
-### Cloud Infrastructure
-
-| Property       | Value                 |
-| -------------- | --------------------- |
-| Cloud Provider | AWS EC2               |
-| Region         | Asia Pacific (Sydney) |
-| Instance Type  | t3.micro              |
-| OS             | Amazon Linux 2023     |
-| Instance Name  | team-game-server      |
-
-### Security Group (Firewall Rules)
-
-| Port | Protocol | Purpose      | Access            |
-| ---- | -------- | ------------ | ----------------- |
-| 22   | TCP      | SSH          | Team Manager only |
-| 80   | TCP      | HTTP (nginx) | Open to all       |
-| 8000 | TCP      | Java server  | Open to all       |
-
-### Deployment Workflow
-
-How we get the server running on EC2:
-
-1. Compile locally:
-   ```bash
-   javac *.java
-   ```
-2. Transfer `.class` files to EC2 via sftp (`.java` source files are not uploaded — trade secret protection):
-   ```bash
-   sftp -i team-key.pem ec2-user@EC2_PUBLIC_IP
-   put *.class
-   ```
-3. SSH into EC2:
-   ```bash
-   ssh -i team-key.pem ec2-user@EC2_PUBLIC_IP
-   ```
-4. Run the Java server:
-   ```bash
-   java Test
-   ```
-5. Verify endpoints in browser or curl:
-   ```
-   http://EC2_PUBLIC_IP:8000/hello
-   ```
-
-### Credential Management
-
-- The `.pem` key file is held exclusively by the Team Manager (Hanseong)
-- Teammates access the running server via the public IP only — no `.pem` sharing
-- The `.pem` file is never committed to the repository
-
-### AWS Credit Management
-
-- **Personal training instances:** stop or terminate after each workshop session
-- **Team project instance:** stop when not actively developing
-- Never leave instances running unattended — idle EC2 time burns credits with no benefit
-
----
-
-## Week 8 – Infrastructure as Code (Terraform)
-
-### Overview
-
-Infrastructure as Code (IaC) means defining cloud resources in configuration files rather than configuring them manually through a web console. We use **Terraform v1.14.9** to provision and manage our AWS environment, making deployments reproducible, version-controlled, and automatable — eliminating the need to click through the AWS console each time.
-
-### What Was Automated
-
-| Resource       | Configuration                                            |
-| -------------- | -------------------------------------------------------- |
-| EC2 Instance   | t3.micro, Amazon Linux 2023, ap-southeast-2              |
-| Security Group | Ports 22 (SSH), 80 (HTTP), 8000 (game server)            |
-| Software setup | Docker + game server container installed via `user_data` |
-
-### How to Deploy
-
-**Initialise Terraform (first time only):**
+| Resource | Config |
+| -------- | ------ |
+| EC2 instance | t3.micro, Amazon Linux 2023, ap-southeast-2 |
+| Security group | Port 22 (SSH), 8000 (game server) |
+| Elastic IP | Static address pinned to EC2 |
 
 ```bash
 terraform init
-```
-
-**Preview changes before applying:**
-
-```bash
-terraform plan -var="key_pair_name=YOUR_KEY"
-```
-
-**Provision the infrastructure:**
-
-```bash
 terraform apply -var="key_pair_name=YOUR_KEY"
+terraform destroy -var="key_pair_name=YOUR_KEY"   # always destroy after testing
 ```
-
-**Tear down all resources after testing:**
-
-```bash
-terraform destroy -var="key_pair_name=YOUR_KEY"
-```
-
-### Important Notes
-
-- **Never commit `terraform.tfstate`** — it contains sensitive resource metadata
-- **Never commit `.tfvars` files or AWS credentials** — treat them like passwords
-- **Always run `terraform destroy` after testing** — idle EC2 instances consume AWS credits
-
-### Team Task Breakdown
-
-| Member   | Challenge   | Task                                                     |
-| -------- | ----------- | -------------------------------------------------------- |
-| Hans     | 3.1 + 3.4   | Terraform tutorial setup + Git repository configuration  |
-| Abdul    | 3.2         | Replace nginx with game server Docker image in Terraform |
-| Arindam  | 3.2 support | Confirm Docker image, test game server endpoint on EC2   |
-| Jaehyeok | 3.3         | Add `instance_type` and `ssh_location` input variables   |
 
 ---
 
-## How to Contribute
-
-We follow a Fork and Pull Request workflow.
-
-1. Fork the repository
-2. Clone your fork
-3. Create a new branch
+## How to Run Locally
 
 ```bash
-git checkout -b your-branch-name
+# Run all tests
+JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.8.9-hotspot" ./mvnw test
+
+# Build and run with Docker
+docker build -t comp3050-server .
+docker run -d -p 8000:8000 comp3050-server
+
+# Test login
+curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Baelin","encpswrd":"<hash>"}'
 ```
 
-4. Make your changes
-5. Commit and push
+---
 
-```bash
-git add .
-git commit -m "feat: description of change"
-git push origin your-branch-name
-```
+## Branch Workflow
 
-6. Open a Pull Request → Team Manager (Hanseong) will review and merge
+| Branch pattern | Purpose |
+| -------------- | ------- |
+| `main` | Production — auto-deploys to EC2 |
+| `hans/*` | Feature/fix branches (merged via PR) |
+| `<member>/*` | Team member feature branches |
+
+All changes go through Pull Requests. `main` is protected — direct pushes not allowed.
 
 ### Commit Message Convention
 
 ```
-feat: add new feature
-fix: bug fix
-docs: documentation update
-test: add or update tests
-ci: CI/CD changes
-refactor: code refactoring
+feat:     new feature
+fix:      bug fix
+ci:       CI/CD pipeline changes
+docs:     documentation only
+test:     add or update tests
+refactor: code restructuring without behaviour change
 ```
+
+---
+
+## Weekly Progress
+
+| Week | Topic | Deliverable |
+| ---- | ----- | ----------- |
+| 1 | Java HTTP server | Basic `/test` and `/hello` endpoints |
+| 2 | Git + GitHub + CI | Team workflow, GitHub Actions CI |
+| 3 | Docker | Containerised server, Docker Hub push |
+| 4 | JUnit testing | Maven project, 54 unit tests |
+| 5 | Core API | `/move`, `/info` endpoints |
+| 6 | DevSecOps | Trivy + Semgrep in CI, secrets management |
+| 7 | AWS EC2 | Cloud deployment (Sydney region) |
+| 8 | Terraform | IaC, reproducible EC2 provisioning |
+| 9 | CI/CD | Full auto-deploy pipeline on push to main |
+| 10–13 | API v3 | `/login`, `/logout`, `/take`, `/place`, `/use`, multiplayer, bug fixes |
+
+---
+
+## Team Roles
+
+| Member | Role |
+| ------ | ---- |
+| Hanseong Park (Hans) | Team Manager — repo management, CI/CD, deployment, bug fixes |
+| Abdul Karim | Session management, LoginHandler, LogoutHandler, TakeHandler |
+| Jaehyeok Park | MoveHandler, Semgrep scanning |
+| Arindam Biswas | Dockerfile, Trivy scanning, map design |
+| Shoa | Maven setup, Docker Compose, JUnit test structure |
