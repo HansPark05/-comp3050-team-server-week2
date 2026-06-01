@@ -40,8 +40,8 @@ public class LoginHandler implements HttpHandler {
         Map<String, String> params = body.trim().startsWith("{")
                 ? parseJson(body)
                 : parseForm(body);
-        String name     = params.get("name");
-        String encpswrd = params.get("encpswrd");
+        String name     = params.get("name") != null ? params.get("name").trim() : null;
+        String encpswrd = params.get("encpswrd") != null ? params.get("encpswrd").trim() : null;
 
         if (name == null || name.isEmpty() || encpswrd == null || encpswrd.isEmpty()) {
             sendResponse(he, 400, "{\"error\":\"missing name or encpswrd\"}");
