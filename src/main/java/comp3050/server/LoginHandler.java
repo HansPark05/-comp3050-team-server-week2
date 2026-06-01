@@ -17,7 +17,7 @@ public class LoginHandler implements HttpHandler {
     private static final Map<String, String> USER_HASHES = new HashMap<>();
 
     static {
-        USER_HASHES.put("Baelin",  sha256("Baelin;fishing123"));
+        USER_HASHES.put("Baelin",  "3cba718deca5f1bf2ed163f24222844e4abea5e23b6880b5ee4717c02ee1c32d");
         USER_HASHES.put("NPC-Man", sha256("NPC-Man;sword456"));
     }
 
@@ -60,6 +60,8 @@ public class LoginHandler implements HttpHandler {
         }
 
         PlayerState state = new PlayerState(2, 2, '0');
+        String currentTile = GameMap.getTile(2, 2);
+        GameMap.setTile(2, 2, currentTile + state.avatar);
         String token = SessionManager.getInstance().createSession(name, state);
         sendResponse(he, 200, "{\"session\":\"" + token + "\"}");
     }
