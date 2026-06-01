@@ -38,6 +38,18 @@ public class GameMap {
             loadedWidth = rows.isEmpty() ? 0 : rows.get(0).length;
             loadedMap = rows.toArray(new String[0][]);
 
+            // Expand bare item chars (a/c/h/k) to "g<item>" so LocationString
+            // can find them in the middle layer. The map format is one char per
+            // tile, but items need a ground tile beneath them.
+            for (int r = 0; r < loadedHeight; r++) {
+                for (int c = 0; c < loadedMap[r].length; c++) {
+                    char ch = loadedMap[r][c].charAt(0);
+                    if (ch == 'a' || ch == 'c' || ch == 'h' || ch == 'k') {
+                        loadedMap[r][c] = "g" + loadedMap[r][c];
+                    }
+                }
+            }
+
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }

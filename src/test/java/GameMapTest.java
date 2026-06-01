@@ -86,8 +86,8 @@ class GameMapTest {
 
     @Test
     void playerStartPositionIsWalkable() {
-        assertFalse(GameMap.isBlocking(2, 2));
-        assertTrue(GameMap.isInBounds(2, 2));
-        assertEquals("g", GameMap.getTile(2, 2));
+        assertFalse(GameMap.isBlocking(1, 6));
+        assertTrue(GameMap.isInBounds(1, 6));
+        assertEquals("g", GameMap.getTile(1, 6));
     }
 }
