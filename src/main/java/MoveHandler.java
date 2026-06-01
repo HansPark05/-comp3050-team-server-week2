@@ -52,10 +52,18 @@ public class MoveHandler implements HttpHandler {
         int targetY = oldY + dy;
         int targetX = oldX + dx;
 
-        // Bounds and blocking check
+        // Bounds and structural blocking check
         if (!GameMap.isInBounds(targetY, targetX) || GameMap.isBlocking(targetY, targetX)) {
             send204(he);
             return;
+        }
+
+        // Multiplayer: block if another player's avatar digit is already on the target tile
+        for (char c : GameMap.getTile(targetY, targetX).toCharArray()) {
+            if (Character.isDigit(c)) {
+                send204(he);
+                return;
+            }
         }
 
         // Remove avatar digit from old tile, append to new tile
