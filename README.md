@@ -286,6 +286,98 @@ refactor: code restructuring without behaviour change
 
 ---
 
+## Project Structure
+
+```
+-comp3050-team-server-week2/
+│
+├── src/
+│   ├── main/java/
+│   │   │
+│   │   ├── Test.java                        # Entry point — starts HTTP server on port 8000,
+│   │   │                                    #   registers all endpoint handlers
+│   │   │
+│   │   ├── ── HTTP Handlers (one per endpoint) ──
+│   │   ├── MoveHandler.java                 # GET /move?dy=&dx=&session=
+│   │   │                                    #   Validates move, updates tile strings, returns {y,x}
+│   │   ├── InfoHandler.java                 # GET /info?y=&x=&session=
+│   │   │                                    #   Returns 11×11 map tile grid as JSON array
+│   │   ├── TakeHandler.java                 # GET /take?session=
+│   │   │                                    #   Picks up item on current tile, adds to inventory
+│   │   ├── PlaceHandler.java                # GET /place?session=
+│   │   │                                    #   Drops first inventory item onto current tile
+│   │   ├── UseHandler.java                  # GET /use?dy=&dx=&session=
+│   │   │                                    #   Toggles adjacent door D (closed) <-> d (open)
+│   │   ├── HelloHandler.java                # GET /hello — basic health-check endpoint
+│   │   ├── MyHandler.java                   # GET /test  — legacy test endpoint
+│   │   │
+│   │   ├── ── Game State ──
+│   │   ├── GameMap.java                     # Singleton — holds the 20×20 tile grid in memory.
+│   │   │                                    #   Loads map.txt at startup. Thread-safe tile access.
+│   │   │                                    #   isInBounds(), isBlocking(), getTile(), setTile()
+│   │   │
+│   │   ├── ── Item System ──
+│   │   ├── Item.java                        # Enum — defines all takeable items:
+│   │   │                                    #   AXE('a'), CYAN_POTION('c'), HEART_POTION('h'), KEY('k')
+│   │   ├── ItemClass.java                   # Enum — item categories: TOOL, DRINK, ARTIFACT
+│   │   │                                    #   Used for same-class swap logic on TAKE
+│   │   ├── LocationString.java              # Parses a tile string (e.g. "gk0") into components:
+│   │   │                                    #   terrain char, item chars, player avatar digit
+│   │   │                                    #   Used by TakeHandler and PlaceHandler
+│   │   │
+│   │   └── comp3050/server/
+│   │       ├── LoginHandler.java            # POST /login — SHA-256 auth, issues session token,
+│   │       │                                #   spawns player at (5,5), assigns unique avatar digit
+│   │       ├── LogoutHandler.java           # GET /logout?session= — removes avatar from map,
+│   │       │                                #   invalidates session token
+│   │       ├── SessionManager.java          # Singleton — stores token -> PlayerState mapping.
+│   │       │                                #   createSession(), getPlayer(), invalidate(),
+│   │       │                                #   getPlayerByUsername(), getUsedAvatars()
+│   │       └── PlayerState.java             # Data class — holds a player's current state:
+│   │                                        #   int y, int x, char avatar, List<Item> inventory,
+│   │                                        #   String username
+│   │
+│   └── test/java/
+│       ├── GameMapTest.java                 # 15 tests — map loading, bounds, tile types, isBlocking()
+│       ├── InfoHandlerTest.java             #  5 tests — session validation, 11×11 view window
+│       ├── ItemTest.java                    #  7 tests — item symbols, classes, same-class swap
+│       ├── LocationStringTest.java          #  9 tests — tile string parsing, avatar preservation
+│       ├── MoveHandlerTest.java             #  6 tests — wall blocking, diagonal block, player block
+│       ├── TakeHandlerTest.java             #  7 tests — item pickup, class swap, avatar in tile
+│       └── PlaceHandlerTest.java            #  5 tests — item drop, avatar preserved after place
+│
+├── .github/
+│   └── workflows/
+│       ├── deploy.yml                       # Main CI/CD pipeline — triggers on push to main:
+│       │                                    #   mvn test -> Semgrep -> docker build/push ->
+│       │                                    #   Trivy -> SSH deploy to EC2
+│       └── ci.yml                           # Lightweight CI — runs tests on all branches/PRs
+│
+├── Dockerfile                               # Multi-stage build:
+│                                            #   Stage 1 (builder): Maven + JDK, compiles to .jar
+│                                            #   Stage 2 (runtime): JRE only, copies .jar + map.txt
+├── docker-compose.yml                       # Local development compose config
+├── map.txt                                  # 20×20 tile map loaded at server startup
+├── pom.xml                                  # Maven project config — Java 21, JUnit 5 dependency
+├── mvnw / mvnw.cmd                          # Maven wrapper scripts (cross-platform)
+├── .semgrep.yml                             # Semgrep SAST rule config — scans for hardcoded secrets
+├── .gitignore                               # Excludes: target/, *.pem, .env, terraform.tfstate
+├── .dockerignore                            # Excludes build artifacts from Docker context
+└── nginx.conf                               # Nginx config (legacy, not used in current deployment)
+```
+
+### Key Design Decisions
+
+| Decision | Reason |
+| -------- | ------ |
+| No framework (raw `com.sun.net.httpserver`) | Unit spec requirement; zero external dependencies; smaller Docker image |
+| Multi-char tile strings (`"gk0"`) | Single data structure encodes terrain + items + avatar; simple string ops for take/place/move |
+| `GameMap` and `SessionManager` as singletons | Shared mutable state accessed by all handlers; thread-safe via `ConcurrentHashMap` |
+| Spawn at row 5, col 5 | Browser client hardcodes `posX=5, posY=5` on startup — server must match |
+| Avatar digits appended last in tile string | `isBlocking()` scans for digit chars to detect player presence without a separate data structure |
+
+---
+
 ## Known Bugs Fixed
 
 | Bug | Root Cause | Fix |
