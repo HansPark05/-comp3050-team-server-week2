@@ -12,7 +12,7 @@ A **Java HTTP game server** for a 2D tile-based virtual world. The server commun
 
 | Property | Value |
 | -------- | ----- |
-| URL | `http://54.66.232.178:8000` |
+| URL | `http://52.64.32.209:8000` |
 | Region | AWS ap-southeast-2 (Sydney) |
 | Deploy | Auto-deploy on push to `main` via GitHub Actions |
 
@@ -210,7 +210,7 @@ Pipeline defined in `.github/workflows/deploy.yml`.
 | `DOCKERHUB_USERNAME` | Docker Hub account |
 | `DOCKERHUB_TOKEN` | Docker Hub access token |
 | `EC2_SSH_PRIVATE_KEY` | Private key for EC2 SSH |
-| `EC2_HOST` | EC2 public IP (`54.66.232.178`) |
+| `EC2_HOST` | EC2 public IP (`52.64.32.209`) |
 | `APP_USER` | Game username (passed as env var) |
 | `APP_PASS` | Game password hash (passed as env var) |
 
