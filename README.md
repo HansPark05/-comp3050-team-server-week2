@@ -411,8 +411,8 @@ refactor: code restructuring without behaviour change
 
 | Member | Role |
 | ------ | ---- |
-| Hanseong Park (Hans) | Team Manager — repo management, CI/CD, deployment, bug fixes |
-| Abdul Karim | Session management, LoginHandler, LogoutHandler, TakeHandler |
-| Jaehyeok Park | MoveHandler, Semgrep scanning |
-| Arindam Biswas | Dockerfile, Trivy scanning, map design |
-| Shoa | Maven setup, Docker Compose, JUnit test structure |
+| Hanseong Park (Hans) | Team Manager — LoginHandler, SHA-256 auth, CI/CD, AWS deployment, bug fixes, repo management |
+| Abdul Karim | Item system & Inventory — TakeHandler, PlaceHandler, Item/ItemClass enums, LocationString cell parser, JUnit tests |
+| Jaehyeok Park | PlayerState (multiplayer), MoveHandler (/move), per-session refactor |
+| Arindam Biswas | Dockerfile, Trivy CVE scanning, Terraform IaC, UseHandler, map design |
+| Shoa | LogoutHandler, Maven setup, Docker Compose, JUnit test structure (54 tests) |
